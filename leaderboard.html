@@ -1,1 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leaderboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{background:#0f172a;color:white;text-align:center;font-family:Arial,sans-serif;padding:20px;}
+h1{color:#fde047;}
+#board{margin-top:20px;height:400px;overflow-y:auto;}
+.entry{padding:10px;background:#334155;margin:5px;border-radius:10px;}
+</style>
+</head>
+<body>
+<h1>Leaderboard</h1>
+<div id="board">Loading...</div>
+<p>Use A/B to scroll, C/D to go back to Menu</p>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
+  authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
+  databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
+  projectId: "byte-by-byte-f7a4c",
+  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  messagingSenderId: "838552047744",
+  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const scoresRef = ref(db,'scores');
+
+const board = document.getElementById('board');
+let entries = [];
+
+onValue(scoresRef, snapshot=>{
+  const data = snapshot.val();
+  board.innerHTML='';
+  if(!data){ board.innerHTML='No scores yet'; return; }
+  entries = Object.values(data).sort((a,b)=>b.score-a.score);
+  entries.forEach(e=>{
+    const div=document.createElement('div');
+    div.className='entry';
+    div.textContent=`${e.name||'Player'} - ${e.score} pts`;
+    board.appendChild(div);
+  });
+});
+
+/* ESP32 buttons navigation */
+const controlRef = ref(db,"control");
+onValue(controlRef, snapshot=>{
+  const data=snapshot.val();
+  if(!data||!data.button) return;
+  const btn=data.button;
+  set(controlRef,{button:""}); // reset
+
+  if(btn==="C" || btn==="D"){
+    location.href='index.html';
+  }
+  // Optional: implement scroll with A/B
+});
+</script>
+</body>
+</html>
 
