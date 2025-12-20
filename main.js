@@ -174,5 +174,11 @@ onValue(controlRef, snapshot=>{
   revealAnswer(btn);
 });
 
+// ⚡ Start the first question
+spinCategory();
+
+// Send start feedback to buzzer
+set(feedbackRef, "start");
+
 /* 🎉 START GAME */
 spinner.textContent="🎡 Press any button to start";
