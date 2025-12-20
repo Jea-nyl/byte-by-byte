@@ -4,138 +4,21 @@
 <meta charset="UTF-8">
 <title>Byte by Byte: IT Quiz Challenge</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
-body {
-  font-family: 'Roboto', sans-serif;
-  background: linear-gradient(to right, #0f172a, #1e293b);
-  color: white;
-  text-align: center;
-  margin: 0;
-  padding: 20px;
-  transition: background 0.5s;
-}
-h1 { font-size: 2.8rem; margin-bottom: 5px; color: #fcd34d; text-shadow: 2px 2px 5px #000000aa; }
-h2 { font-size: 1.6rem; margin-top: 0; color: #a5b4fc; text-shadow: 1px 1px 3px #000000aa; }
-
-/* COMMON BOX STYLES */
-.box {
-  margin: 15px auto;
-  padding: 18px;
-  width: 340px;
-  max-width: 90%;
-  border-radius: 16px;
-  box-shadow: 0 5px 15px #00000088;
-  transition: background 0.3s, transform 0.3s;
-  display: none; /* hidden by default */
-}
-
-/* MENU BOX */
-#menuContent {
-  display: block; /* initially visible */
-  font-size: 1.4rem;
-  background: #334155;
-  text-align: left;
-}
-
-/* SPINNER / TIMER / SUSPENSE / QUESTION */
-#spinner, #timer, #suspense, #question { background: #475569; font-size: 1.3rem; }
-#question { font-size: 1.5rem; padding: 25px; background: #1e293b; max-width:600px; }
-
-/* CHOICES */
-.choices {
-  display: grid;
-  grid-template-columns: repeat(2, 160px);
-  gap: 20px;
-  justify-content: center;
-  margin-top: 30px;
-}
-
-.choice {
-  padding: 22px;
-  border-radius: 16px;
-  background: #475569;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
-  box-shadow: 0 5px 15px #00000077;
-}
-.choice:hover { transform: translateY(-5px); background: #6366f1; color:white; }
-
-.active { background: #fde047; color:black; }
-.correct { background: #22c55e; color:white; }
-.wrong { background: #ef4444; color:white; }
-
-/* SCORE & LIVES */
-#scoreLives {
-  font-size: 1.3rem;
-  margin-top: 25px;
-  background: #1e293b;
-  display: inline-block;
-  padding: 12px 25px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px #00000077;
-  display: none; /* hidden until game starts */
-}
-
-/* Flash animations */
-.correct-flash { animation: flashGreen 1s ease-in-out 1 forwards; }
-.wrong-flash { animation: flashRed 1s ease-in-out 1 forwards; }
-
-@keyframes flashGreen {
-  0% { background: linear-gradient(to right,#0f172a,#1e293b);}
-  50% { background: #14532d; }
-  100% { background: linear-gradient(to right,#0f172a,#1e293b);}
-}
-@keyframes flashRed {
-  0% { background: linear-gradient(to right,#0f172a,#1e293b);}
-  50% { background: #7f1d1d; }
-  100% { background: linear-gradient(to right,#0f172a,#1e293b);}
-}
-
-/* RESPONSIVE */
-@media screen and (max-width:400px){
-  .choices { grid-template-columns: 1fr; gap: 15px; }
-  #menuContent, #spinner, #timer, #suspense, #question { width: 95%; }
-}
+body { font-family: Arial,sans-serif; text-align:center; background:#0f172a; color:white; }
+h1 { margin-top:50px; color:#fde047; }
+.menu-option { margin:25px 0; font-size:1.4rem; background:#334155; padding:15px; border-radius:12px; cursor:pointer; }
+.menu-option:hover { background:#6366f1; color:white; }
 </style>
 </head>
 <body>
-
 <h1>🕹️ Byte by Byte</h1>
 <h2>IT Quiz Challenge</h2>
 
-<!-- MAIN MENU -->
-<div id="menuContent" class="box">
-  <p>A → Start</p>
-  <p>B → Settings</p>
-  <p>C → Leaderboard</p>
-  <p>D → Introduction</p>
-</div>
+<div class="menu-option" onclick="location.href='start.html'">Start</div>
+<div class="menu-option" onclick="location.href='settings.html'">Settings</div>
+<div class="menu-option" onclick="location.href='leaderboard.html'">Leaderboard</div>
+<div class="menu-option" onclick="location.href='introduction.html'">Introduction</div>
 
-<!-- CATEGORY SPINNER -->
-<div id="spinner" class="box"></div>
-
-<!-- TIMERS -->
-<div id="timer" class="box"></div>
-<div id="suspense" class="box"></div>
-
-<!-- QUESTION BOX -->
-<div id="question" class="box"></div>
-
-<!-- CHOICES -->
-<div class="choices">
-  <div id="A" class="choice">A</div>
-  <div id="B" class="choice">B</div>
-  <div id="C" class="choice">C</div>
-  <div id="D" class="choice">D</div>
-</div>
-
-<!-- SCORE & LIVES -->
-<div id="scoreLives">⭐ Score: 0 | ❤️ Lives: 5</div>
-
-<script type="module" src="main.js"></script>
 </body>
 </html>
