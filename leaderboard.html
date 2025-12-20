@@ -2,27 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Leaderboard</title>
+<title>Leaderboard - Byte by Byte</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{background:#0f172a;color:white;text-align:center;font-family:Arial,sans-serif;padding:20px;}
-h1{color:#fde047;}
-#board{margin-top:20px;height:400px;overflow:hidden;position:relative;}
-.entry{padding:10px;background:#334155;margin:5px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
-.gold{color:#FFD700;font-weight:bold;}
-.silver{color:#C0C0C0;font-weight:bold;}
-.bronze{color:#CD7F32;font-weight:bold;}
+body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; padding:20px; }
+h1 { color:#fde047; }
+#scores { margin-top:20px; }
+.scoreItem { background:#1e293b; margin:10px auto; width:300px; padding:15px; border-radius:12px; font-size:1.2rem; }
+.active { background:#fde047; color:black; }
 </style>
 </head>
 <body>
-<h1>Leaderboard</h1>
-<div id="board">Loading...</div>
-<p>Use A/B to scroll, C/D to go back to Menu</p>
+<h1>🏆 Leaderboard</h1>
+<div id="scores"></div>
+<p>Press D to return to Menu</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
@@ -30,51 +29,42 @@ const firebaseConfig = {
   projectId: "byte-by-byte-f7a4c",
   storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
   messagingSenderId: "838552047744",
-  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+  appId: "1:838552047744:web:f653b9fba96e49d665"
 };
 
+/* 🔌 INITIALIZE FIREBASE */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const scoresRef = ref(db,'scores');
-const controlRef = ref(db,"control");
+const leaderboardRef = ref(db, "leaderboard");
 
-const board = document.getElementById('board');
-let entries = [];
-let scrollIndex = 0;
-const visibleCount = 5; // show 5 entries at a time
+const scoresDiv = document.getElementById("scores");
 
-function renderBoard(){
-  board.innerHTML='';
-  const slice = entries.slice(scrollIndex,scrollIndex+visibleCount);
-  slice.forEach((e,i)=>{
-    const div=document.createElement('div');
-    div.className='entry';
-    if(scrollIndex+i===0) div.classList.add('gold');
-    else if(scrollIndex+i===1) div.classList.add('silver');
-    else if(scrollIndex+i===2) div.classList.add('bronze');
-    div.textContent=`${e.name||'Player'} - ${e.score} pts`;
-    board.appendChild(div);
-  });
+function updateLeaderboard(data){
+    const entries = [];
+    for(const id in data){
+        entries.push({score: data[id].score, timestamp: data[id].timestamp});
+    }
+    entries.sort((a,b)=>b.score - a.score || a.timestamp - b.timestamp); // higher score first, tie-breaker faster
+    scoresDiv.innerHTML = "";
+    entries.forEach((e,i)=>{
+        const div = document.createElement("div");
+        div.className="scoreItem";
+        div.textContent = `${i+1}. Score: ${e.score}`;
+        scoresDiv.appendChild(div);
+    });
 }
 
-onValue(scoresRef,snapshot=>{
-  const data = snapshot.val();
-  if(!data){ board.innerHTML='No scores yet'; entries=[]; return; }
-  entries = Object.values(data).sort((a,b)=>b.score-a.score);
-  scrollIndex=0;
-  renderBoard();
+onValue(leaderboardRef, snapshot => {
+    const data = snapshot.val() || {};
+    updateLeaderboard(data);
 });
 
-/* ESP32 buttons navigation */
-onValue(controlRef,snapshot=>{
-  const data = snapshot.val();
-  if(!data||!data.button) return;
-  const btn = data.button;
-  set(controlRef,{button:""}); // reset
-
-  if(btn==="C" || btn==="D"){ location.href='index.html'; }
-  if(btn==="A"){ scrollIndex=Math.max(0,scrollIndex-1); renderBoard(); }
-  if(btn==="B"){ scrollIndex=Math.min(entries.length-visibleCount,scrollIndex+1); renderBoard(); }
+/* 🔌 ESP32 Back button */
+import { getDatabase, ref as dbRef, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+const controlRef = ref(db,"control");
+onValue(controlRef, snapshot=>{
+    const btn = snapshot.val()?.button;
+    if(btn==="D") window.location.href="index.html";
 });
 </script>
 </body>
