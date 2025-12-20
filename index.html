@@ -1,39 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Byte by Byte – ESP32 Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Byte by Byte: IT Quiz Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #0f172a;
       color: white;
       text-align: center;
-      padding-top: 100px;
+      padding: 40px;
     }
+
     h1 {
-      font-size: 2.2rem;
+      margin-bottom: 10px;
     }
+
     #status {
-      font-size: 1.8rem;
-      margin-top: 30px;
+      margin: 20px auto;
       padding: 20px;
-      border-radius: 12px;
+      width: 320px;
+      font-size: 1.5rem;
       background: #1e293b;
-      display: inline-block;
-      min-width: 300px;
+      border-radius: 12px;
     }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, 140px);
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .choice {
+      padding: 20px;
+      font-size: 1.4rem;
+      border-radius: 12px;
+      background: #334155;
+      transition: 0.3s;
+    }
+
     .active {
-      background: #16a34a;
-      color: white;
+      background: #22c55e;
+      color: black;
     }
   </style>
 </head>
+
 <body>
 
-  <h1>🕹️ Byte by Byte: IT Quiz Challenge</h1>
+  <h1>🕹️ Byte by Byte</h1>
+  <h2>IT Quiz Challenge</h2>
+
   <div id="status">Waiting for ESP32 button…</div>
+
+  <div class="choices">
+    <div id="A" class="choice">A</div>
+    <div id="B" class="choice">B</div>
+    <div id="C" class="choice">C</div>
+    <div id="D" class="choice">D</div>
+  </div>
 
   <script type="module" src="main.js"></script>
 </body>
