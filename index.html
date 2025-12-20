@@ -12,14 +12,15 @@ body {
   color: white;
   text-align: center;
   padding: 20px;
+  transition: background 0.5s;
 }
 
 h1 { margin-bottom: 5px; }
 
-#spinner {
-  margin: 20px auto;
-  font-size: 1.8rem;
-  padding: 20px;
+#spinner, #timer, #suspense {
+  margin: 15px auto;
+  font-size: 1.5rem;
+  padding: 15px;
   width: 320px;
   background: #1e293b;
   border-radius: 12px;
@@ -35,7 +36,7 @@ h1 { margin-bottom: 5px; }
 }
 
 #question {
-  margin-top: 25px;
+  margin-top: 20px;
   font-size: 1.4rem;
 }
 
@@ -54,18 +55,9 @@ h1 { margin-bottom: 5px; }
   font-size: 1.2rem;
 }
 
-.active {
-  background: #22c55e;
-  color: black;
-}
-
-.correct {
-  background: #16a34a;
-}
-
-.wrong {
-  background: #dc2626;
-}
+.active { background: #fde047; color: black; }
+.correct { background: #22c55e; }
+.wrong { background: #ef4444; }
 </style>
 </head>
 
@@ -75,6 +67,8 @@ h1 { margin-bottom: 5px; }
 <h2>IT Quiz Challenge</h2>
 
 <div id="spinner">🎡 Press any button to spin</div>
+<div id="timer"></div>
+<div id="suspense"></div>
 
 <div id="question"></div>
 
