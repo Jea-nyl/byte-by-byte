@@ -22,7 +22,6 @@ const spinner = document.getElementById("spinner");
 const timerBox = document.getElementById("timer");
 const suspenseBox = document.getElementById("suspense");
 const questionBox = document.getElementById("question");
-
 const choices = {
   A: document.getElementById("A"),
   B: document.getElementById("B"),
@@ -33,7 +32,6 @@ const choices = {
 /* ===== SCORE & LIVES ===== */
 let score = 0;
 let lives = 5;
-
 const scoreBox = document.createElement("div");
 scoreBox.style.marginTop = "10px";
 document.body.insertBefore(scoreBox, spinner.nextSibling);
@@ -43,42 +41,42 @@ function updateHUD() {
 }
 updateHUD();
 
-/* ===== QUESTIONS & CATEGORIES ===== */
+/* ===== QUESTIONS ===== */
 const categories = {
   Programming: [
-    { q: "HTML stands for?", c: ["Hyper Text Markup Language","High Tech","Home Tool","Hyperlinks"], a: "A" },
-    { q: "Which is a programming language?", c: ["HTTP","HTML","Python","CSS"], a: "C" },
-    { q: "JS comment symbol?", c: ["//","##","<!--","**"], a: "A" },
-    { q: "CSS styles?", c: ["Logic","Database","Design","Server"], a: "C" },
-    { q: "Which is not a loop?", c: ["for","while","if","do-while"], a: "C" }
+    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech","Home Tool","Hyperlinks"], a:"A" },
+    { q:"Programming language?", c:["HTTP","HTML","Python","CSS"], a:"C" },
+    { q:"JS comment symbol?", c:["//","##","<!--","**"], a:"A" },
+    { q:"CSS styles?", c:["Logic","Database","Design","Server"], a:"C" },
+    { q:"Which is not a loop?", c:["for","while","if","do-while"], a:"C" }
   ],
   Networking: [
-    { q: "Device that connects networks?", c: ["Router","RAM","CPU","SSD"], a: "A" },
-    { q: "IP stands for?", c: ["Internet Protocol","Internal Process","Input Port","Internet Provider"], a: "A" },
-    { q: "LAN means?", c: ["Large Area Network","Local Area Network","Logical Access Node","Low Area Network"], a: "B" },
-    { q: "Which uses WiFi?", c: ["Ethernet","Bluetooth","Wireless","Fiber"], a: "C" },
-    { q: "IP belongs to which layer?", c: ["Physical","Transport","Network","Application"], a: "C" }
+    { q:"Device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" },
+    { q:"IP stands for?", c:["Internet Protocol","Internal Process","Input Port","Internet Provider"], a:"A" },
+    { q:"LAN means?", c:["Large Area Network","Local Area Network","Logical Access Node","Low Area Network"], a:"B" },
+    { q:"Uses WiFi?", c:["Ethernet","Bluetooth","Wireless","Fiber"], a:"C" },
+    { q:"IP layer?", c:["Physical","Transport","Network","Application"], a:"C" }
   ],
   Hardware: [
-    { q: "CPU stands for?", c: ["Central Processing Unit","Computer Power Unit","Control Processor Unit","Central Programming Unit"], a: "A" },
-    { q: "RAM is volatile?", c: ["Yes","No","Sometimes","Depends"], a: "A" },
-    { q: "SSD vs HDD, which is faster?", c: ["SSD","HDD","Equal","Depends"], a: "A" },
-    { q: "GPU is used for?", c: ["Graphics","CPU","Storage","Networking"], a: "A" },
-    { q: "Motherboard connects?", c: ["CPU, RAM, GPU","CPU only","RAM only","GPU only"], a: "A" }
+    { q:"CPU stands for?", c:["Central Processing Unit","Computer Power Unit","Control Processor Unit","Central Programming Unit"], a:"A" },
+    { q:"RAM volatile?", c:["Yes","No","Sometimes","Depends"], a:"A" },
+    { q:"SSD vs HDD faster?", c:["SSD","HDD","Equal","Depends"], a:"A" },
+    { q:"GPU used for?", c:["Graphics","CPU","Storage","Networking"], a:"A" },
+    { q:"Motherboard connects?", c:["CPU, RAM, GPU","CPU only","RAM only","GPU only"], a:"A" }
   ],
   Cybersecurity: [
-    { q: "Phishing is?", c: ["Email scam","Firewall","Encryption","Virus"], a: "A" },
-    { q: "HTTPS protects?", c: ["Data","Power","Hardware","Network"], a: "A" },
-    { q: "Strong password should?", c: ["Include symbols","Be short","Name only","1234"], a: "A" },
-    { q: "Malware is?", c: ["Malicious software","Hardware","CPU","Network device"], a: "A" },
-    { q: "Two-factor authentication?", c: ["Extra login step","Password only","Email only","Username only"], a: "A" }
+    { q:"Phishing is?", c:["Email scam","Firewall","Encryption","Virus"], a:"A" },
+    { q:"HTTPS protects?", c:["Data","Power","Hardware","Network"], a:"A" },
+    { q:"Strong password?", c:["Include symbols","Be short","Name only","1234"], a:"A" },
+    { q:"Malware is?", c:["Malicious software","Hardware","CPU","Network device"], a:"A" },
+    { q:"2FA?", c:["Extra login step","Password only","Email only","Username only"], a:"A" }
   ],
   Databases: [
-    { q: "SQL stands for?", c: ["Structured Query Language","Simple Query Logic","Server Question Language","Storage Query Language"], a: "A" },
-    { q: "Primary key?", c: ["Unique identifier","Repeated value","Null","Secondary key"], a: "A" },
-    { q: "CRUD stands for?", c: ["Create Read Update Delete","Copy Run Undo Delete","Compute Read Update Delete","Create Run Undo Drop"], a: "A" },
-    { q: "Index in DB is?", c: ["Faster search","Slower search","Delete data","Add column"], a: "A" },
-    { q: "SQL command to remove table?", c: ["DROP TABLE","DELETE TABLE","REMOVE TABLE","CLEAR TABLE"], a: "A" }
+    { q:"SQL stands for?", c:["Structured Query Language","Simple Query Logic","Server Question Language","Storage Query Language"], a:"A" },
+    { q:"Primary key?", c:["Unique identifier","Repeated value","Null","Secondary key"], a:"A" },
+    { q:"CRUD?", c:["Create Read Update Delete","Copy Run Undo Delete","Compute Read Update Delete","Create Run Undo Drop"], a:"A" },
+    { q:"Index?", c:["Faster search","Slower search","Delete data","Add column"], a:"A" },
+    { q:"Remove table?", c:["DROP TABLE","DELETE TABLE","REMOVE TABLE","CLEAR TABLE"], a:"A" }
   ]
 };
 
@@ -100,16 +98,15 @@ function resetChoices() {
 function spinCategory() {
   spinner.classList.add("spin");
   spinner.textContent = "🎡 Spinning...";
-
   const keys = Object.keys(categories);
   currentCategory = keys[Math.floor(Math.random() * keys.length)];
 
-  setTimeout(() => {
+  setTimeout(()=>{
     spinner.classList.remove("spin");
     spinner.textContent = `📂 Category: ${currentCategory}`;
     loadQuestion();
     spinning = false;
-  }, 2000);
+  },2000);
 }
 
 /* ===== LOAD QUESTION ===== */
@@ -118,7 +115,6 @@ function loadQuestion() {
   currentQuestion = list[Math.floor(Math.random() * list.length)];
 
   questionBox.textContent = currentQuestion.q;
-
   ["A","B","C","D"].forEach((l,i)=>{
     choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
   });
@@ -127,21 +123,20 @@ function loadQuestion() {
 }
 
 /* ===== 10s ANSWER TIMER ===== */
-function startAnswerTimer() {
+function startAnswerTimer(){
   canAnswer = true;
   answerTime = 10;
   timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
 
-  answerInterval = setInterval(() => {
+  answerInterval = setInterval(()=>{
     answerTime--;
     timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
-
     if(answerTime <= 0){
       clearInterval(answerInterval);
       canAnswer = false;
       revealAnswer(null);
     }
-  }, 1000);
+  },1000);
 }
 
 /* ===== 5s SUSPENSE + RESULT ===== */
@@ -152,11 +147,11 @@ function revealAnswer(selected){
   suspenseTime = 5;
   suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
 
-  suspenseInterval = setInterval(() => {
+  suspenseInterval = setInterval(()=>{
     suspenseTime--;
     suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
 
-    if(suspenseTime <= 0){
+    if(suspenseTime <=0){
       clearInterval(suspenseInterval);
       suspenseBox.textContent = "";
 
@@ -176,13 +171,13 @@ function revealAnswer(selected){
 
       updateHUD();
 
-      // 🔌 SEND RESULT TO ESP32
+      // send result to ESP32
       set(controlRef, { result });
 
       setTimeout(()=>{
         document.body.style.background = "#0f172a";
 
-        if(lives <= 0){
+        if(lives <=0){
           questionBox.textContent = "💀 GAME OVER";
           spinner.textContent = `FINAL SCORE: ${score}`;
           return;
