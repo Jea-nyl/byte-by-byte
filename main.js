@@ -14,17 +14,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+const statusBox = document.getElementById("status");
 const controlRef = ref(db, "control");
-const status = document.getElementById("status");
 
 onValue(controlRef, snapshot => {
   const data = snapshot.val();
-  if (!data) return;
+  if (!data || !data.button) return;
 
   if (data.button === "A") {
-    status.innerText = "BUTTON A PRESSED 🎉";
+    statusBox.textContent = "✅ BUTTON A PRESSED";
+    statusBox.classList.add("active");
 
-    // Clear button so it can be pressed again
+    // reset so it can trigger again
     set(controlRef, { button: "" });
+
+    setTimeout(() => {
+      statusBox.textContent = "Waiting for ESP32 button…";
+      statusBox.classList.remove("active");
+    }, 1500);
   }
 });
