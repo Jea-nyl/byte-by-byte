@@ -33,7 +33,7 @@ h1 { color:#fde047; }
   <div class="settingItem" data-key="revealTime">Reveal Time: <span id="revealTimeDisplay"></span>s</div>
 </div>
 
-<p>Use A/B to change values, D to Save & Back to Menu</p>
+<p>Use A/B to move/change value, C to select, D to save & go back</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -58,6 +58,7 @@ const controlRef = ref(db,"control");
 /* ⚙️ SETTINGS LOGIC */
 const settingsItems = Array.from(document.querySelectorAll(".settingItem"));
 let currentIndex = 0;
+let selectedIndex = null;
 
 // Load from localStorage or defaults
 let answerTime = parseInt(localStorage.getItem("answerTime")) || 10;
@@ -89,24 +90,31 @@ onValue(controlRef, snapshot => {
   const currentItem = settingsItems[currentIndex];
   const key = currentItem.dataset.key;
 
-  if(btn==="A"){ // Move up / +1
-    if(key==="answerTime") answerTime++;
-    if(key==="revealTime") revealTime++;
+  if(btn==="A"){ // Move up
     currentIndex = (currentIndex-1 + settingsItems.length) % settingsItems.length;
+    // If selected, increase value
+    if(selectedIndex === currentIndex){
+      if(key==="answerTime") answerTime++;
+      if(key==="revealTime") revealTime++;
+    }
     updateActive();
     updateDisplay();
-  } else if(btn==="B"){ // Move down / -1
-    if(key==="answerTime" && answerTime>1) answerTime--;
-    if(key==="revealTime" && revealTime>1) revealTime--;
+  } else if(btn==="B"){ // Move down
     currentIndex = (currentIndex+1)%settingsItems.length;
+    if(selectedIndex === currentIndex){
+      if(key==="answerTime" && answerTime>1) answerTime--;
+      if(key==="revealTime" && revealTime>1) revealTime--;
+    }
     updateActive();
     updateDisplay();
-  } else if(btn==="D"){ // Save & Back to Menu
+  } else if(btn==="C"){ // Select/focus current item
+    selectedIndex = currentIndex;
+    console.log("Selected item:", key);
+  } else if(btn==="D"){ // Save & Back to Main Menu
     localStorage.setItem("answerTime", answerTime);
     localStorage.setItem("revealTime", revealTime);
     window.location.href="index.html";
   }
-  // C button can remain unused or optional
 });
 </script>
 </body>
