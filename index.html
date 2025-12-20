@@ -1,13 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>ESP32 Button Test</title>
+  <meta charset="UTF-8" />
+  <title>Byte by Byte – ESP32 Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding-top: 100px;
+    }
+    h1 {
+      font-size: 2.2rem;
+    }
+    #status {
+      font-size: 1.8rem;
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      background: #1e293b;
+      display: inline-block;
+      min-width: 300px;
+    }
+    .active {
+      background: #16a34a;
+      color: white;
+    }
+  </style>
 </head>
 <body>
 
-<h1>ESP32 Button Test</h1>
-<h2 id="status">Waiting...</h2>
+  <h1>🕹️ Byte by Byte: IT Quiz Challenge</h1>
+  <div id="status">Waiting for ESP32 button…</div>
 
-<script type="module" src="main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
