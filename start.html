@@ -1,92 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Byte by Byte: IT Quiz Challenge</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #0f172a;
-    color: #fff;
-    text-align: center;
-    padding: 20px;
-    transition: background 0.5s ease;
-  }
+  <meta charset="UTF-8" />
+  <title>Byte by Byte – Start</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  h1 { margin-bottom: 0; font-size: 2.2rem; }
-  h2 { margin-top: 0; font-weight: normal; color: #cbd5e1; }
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  #status {
-    display: flex;
-    justify-content: center;
-    gap: 50px;
-    margin: 15px 0;
-    font-size: 1.2rem;
-  }
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      transition: background 0.4s ease;
+    }
 
-  #timer, #suspense {
-    font-weight: bold;
-    background: #1e293b;
-    padding: 10px 20px;
-    border-radius: 12px;
-  }
+    body.correct { background: #14532d; }
+    body.wrong { background: #7f1d1d; }
 
-  #score, #lives {
-    background: #334155;
-    padding: 10px 20px;
-    border-radius: 12px;
-  }
+    h1 { margin-bottom: 10px; }
 
-  #question {
-    margin-top: 20px;
-    font-size: 1.5rem;
-    min-height: 60px;
-  }
+    #hud {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
 
-  .choices {
-    display: grid;
-    grid-template-columns: repeat(2, 160px);
-    gap: 15px;
-    justify-content: center;
-    margin-top: 25px;
-  }
+    #question {
+      margin: 20px auto;
+      font-size: 1.4rem;
+      max-width: 700px;
+    }
 
-  .choice {
-    padding: 18px;
-    border-radius: 12px;
-    background: #334155;
-    font-size: 1.2rem;
-    cursor: default;
-    user-select: none;
-    transition: background 0.3s ease, color 0.3s ease;
-  }
+    #timer, #suspense {
+      margin: 10px;
+      font-size: 1.2rem;
+    }
 
-  .active { background: #fde047; color: black; }
-  .correct { background: #22c55e; color: #fff; }
-  .wrong { background: #ef4444; color: #fff; }
-</style>
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      max-width: 500px;
+      margin: 30px auto;
+    }
+
+    .choice {
+      background: #334155;
+      padding: 18px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+    }
+
+    .choice.selected { background: #fde047; color: black; }
+    .choice.correct { background: #22c55e; }
+    .choice.wrong { background: #ef4444; }
+  </style>
 </head>
+
 <body>
-<h1>🕹️ Byte by Byte</h1>
-<h2>IT Quiz Challenge</h2>
 
-<div id="status">
-  <div id="score">Score: 0</div>
-  <div id="lives">Lives: 5</div>
-  <div id="timer">⏱️ Time: 10s</div>
-  <div id="suspense">⏳ Suspense: 5s</div>
-</div>
+  <h1>🎮 Byte by Byte</h1>
 
-<div id="question"></div>
+  <!-- HUD -->
+  <div id="hud">
+    <div id="score">Score: 0</div>
+    <div id="lives">Lives: 5</div>
+  </div>
 
-<div class="choices">
-  <div id="A" class="choice">A</div>
-  <div id="B" class="choice">B</div>
-  <div id="C" class="choice">C</div>
-  <div id="D" class="choice">D</div>
-</div>
+  <!-- GAME TEXT -->
+  <div id="timer"></div>
+  <div id="suspense"></div>
+  <div id="question">Loading question...</div>
 
-<script type="module" src="main.js"></script>
+  <!-- ANSWERS -->
+  <div class="choices">
+    <div id="choiceA" class="choice">A</div>
+    <div id="choiceB" class="choice">B</div>
+    <div id="choiceC" class="choice">C</div>
+    <div id="choiceD" class="choice">D</div>
+  </div>
+
+  <!-- MAIN GAME LOGIC -->
+  <script src="main.js"></script>
+
 </body>
 </html>
