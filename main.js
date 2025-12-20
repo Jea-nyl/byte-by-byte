@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
@@ -18,6 +18,7 @@ const db = getDatabase(app);
 const controlRef = ref(db, "control");
 
 /* 🎮 UI ELEMENTS */
+const menuContent = document.getElementById("menuContent");
 const spinner = document.getElementById("spinner");
 const timerBox = document.getElementById("timer");
 const suspenseBox = document.getElementById("suspense");
@@ -31,118 +32,111 @@ const choices = {
   D: document.getElementById("D")
 };
 
-/* 📚 QUESTIONS */
+/* 🎲 GAME DATA */
 const categories = {
   Programming: [
-    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech","Home Tool","Hyperlinks"], a:"A" },
-    { q:"CSS is used for?", c:["Styling","Programming","Database","Networking"], a:"A" },
-    { q:"JavaScript is?", c:["Programming language","Database","Hardware","Network protocol"], a:"A" },
-    { q:"Bootstrap is?", c:["CSS framework","Database","OS","Server"], a:"A" },
-    { q:"Git is used for?", c:["Version control","Networking","CPU","Storage"], a:"A" }
+    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech Machine Language","Home Tool Markup Language","Hyperlinks Text Machine"], a:"A" },
+    { q:"CSS stands for?", c:["Creative Style Sheets","Cascading Style Sheets","Computer Style Sheet","Colorful Style Sheets"], a:"B" },
+    { q:"JS is used for?", c:["Styling pages","Adding interactivity","Database","Networking"], a:"B" },
+    { q:"Which is frontend?", c:["React","Node.js","MongoDB","Python"], a:"A" },
+    { q:"Which is backend?", c:["React","HTML","Node.js","CSS"], a:"C" }
   ],
   Networking: [
-    { q:"What device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" },
-    { q:"IP stands for?", c:["Internet Protocol","Internal Process","Instant Print","Input Port"], a:"A" },
-    { q:"LAN means?", c:["Local Area Network","Large Access Node","Linked Application","Light Area Network"], a:"A" },
-    { q:"HTTP is?", c:["Protocol","Programming language","Hardware","Software"], a:"A" },
-    { q:"DNS translates?", c:["Domain names to IP","HTML to CSS","JavaScript to HTML","IP to URL"], a:"A" }
+    { q:"Device connecting networks?", c:["Router","RAM","CPU","SSD"], a:"A" },
+    { q:"IP stands for?", c:["Internet Protocol","Internal Process","Interface Program","Internet Page"], a:"A" },
+    { q:"TCP is?", c:["Transmission Control Protocol","Text Control Program","Terminal Communication Process","Transfer Connection Protocol"], a:"A" },
+    { q:"LAN means?", c:["Large Area Network","Local Area Network","Long Access Network","Local Application Network"], a:"B" },
+    { q:"DNS translates?", c:["IP to Name","Name to IP","Both","None"], a:"C" }
   ]
 };
 
 /* 🎯 GAME STATE */
-let gameState = "menu"; // menu, playing, gameover
-let spinning = false;
+let gameState = "menu"; // menu / playing / settings / leaderboard / intro / gameover
 let currentCategory = "";
 let currentQuestion = null;
 let canAnswer = false;
-
 let score = 0;
 let lives = 5;
-
 let answerTime = 10;
 let suspenseTime = 5;
 let answerInterval, suspenseInterval;
 
 /* 🧹 HELPERS */
-function resetChoices() {
-  Object.values(choices).forEach(c => c.className = "choice");
+function showMenu() {
+  menuContent.style.display = "block";
+  spinner.style.display = "none";
+  timerBox.style.display = "none";
+  suspenseBox.style.display = "none";
+  questionBox.style.display = "none";
+  scoreLivesBox.style.display = "none";
+  Object.values(choices).forEach(c => c.style.display="none");
+  menuContent.innerHTML = "A → Start<br>B → Settings<br>C → Leaderboard<br>D → Introduction";
+  gameState="menu";
 }
 
-function updateHUD() {
-  scoreLivesBox.innerHTML = `⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+function showGameUI(){
+  menuContent.style.display = "none";
+  spinner.style.display = "block";
+  timerBox.style.display = "block";
+  suspenseBox.style.display = "block";
+  questionBox.style.display = "block";
+  scoreLivesBox.style.display = "inline-block";
+  Object.values(choices).forEach(c => c.style.display="block");
 }
 
-/* 🎡 RANDOM CATEGORY "SPINNER" */
-function spinCategory() {
-  spinning = true;
-  const categoryKeys = Object.keys(categories);
-  let i = 0;
+function resetChoices(){
+  Object.values(choices).forEach(c=>c.className="choice");
+}
 
-  spinner.textContent = "🎡 Selecting category...";
-  const flashInterval = setInterval(() => {
-    spinner.textContent = `📂 ${categoryKeys[i % categoryKeys.length]}`;
-    i++;
-  }, 100);
-
-  setTimeout(() => {
-    clearInterval(flashInterval);
-    currentCategory = categoryKeys[Math.floor(Math.random() * categoryKeys.length)];
-    spinner.textContent = `📂 Category: ${currentCategory}`;
-    loadQuestion();
-    spinning = false;
-  }, 1500);
+/* 🎡 RANDOM CATEGORY */
+function selectRandomCategory(){
+  const keys = Object.keys(categories);
+  currentCategory = keys[Math.floor(Math.random()*keys.length)];
+  spinner.textContent = `📂 Category: ${currentCategory}`;
+  loadQuestion();
 }
 
 /* ❓ LOAD QUESTION */
-function loadQuestion() {
+function loadQuestion(){
   const list = categories[currentCategory];
-  currentQuestion = list[Math.floor(Math.random() * list.length)];
-
+  currentQuestion = list[Math.floor(Math.random()*list.length)];
   questionBox.textContent = currentQuestion.q;
-  ["A","B","C","D"].forEach((l,i)=>{
-    choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
-  });
-
+  ["A","B","C","D"].forEach((l,i)=> choices[l].textContent=`${l}. ${currentQuestion.c[i]}`);
   startAnswerTimer();
 }
 
-/* ⏱️ ANSWER TIMER 10s */
-function startAnswerTimer() {
-  canAnswer = true;
-  answerTime = 10;
-  timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
-
-  answerInterval = setInterval(()=>{
-    answerTime--;
-    timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
-
-    if(answerTime <= 0){
+/* ⏱️ ANSWER TIMER */
+function startAnswerTimer(){
+  canAnswer=true;
+  let time=answerTime;
+  timerBox.textContent = `⏱️ Time left: ${time}s`;
+  answerInterval=setInterval(()=>{
+    time--;
+    timerBox.textContent=`⏱️ Time left: ${time}s`;
+    if(time<=0){
       clearInterval(answerInterval);
-      canAnswer = false;
+      canAnswer=false;
       revealAnswer(null);
     }
   },1000);
 }
 
-/* ⏳ SUSPENSE + RESULT */
+/* ⏳ REVEAL ANSWER */
 function revealAnswer(selected){
+  resetChoices();
   clearInterval(answerInterval);
-  suspenseTime = 5;
-  suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
+  let suspense=suspenseTime;
+  suspenseBox.textContent=`⏳ Revealing in ${suspense}s`;
 
-  suspenseInterval = setInterval(()=>{
-    suspenseTime--;
-    suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
-
-    if(suspenseTime <=0){
+  suspenseInterval=setInterval(()=>{
+    suspense--;
+    suspenseBox.textContent=`⏳ Revealing in ${suspense}s`;
+    if(suspense<=0){
       clearInterval(suspenseInterval);
-      suspenseBox.textContent = "";
-
-      resetChoices();
-
-      if(selected === currentQuestion.a){
+      suspenseBox.textContent="";
+      if(selected===currentQuestion.a){
         document.body.classList.add("correct-flash");
-        score +=5;
+        score+=5;
         choices[selected]?.classList.add("correct");
       } else {
         document.body.classList.add("wrong-flash");
@@ -150,70 +144,64 @@ function revealAnswer(selected){
         choices[currentQuestion.a]?.classList.add("correct");
         if(selected) choices[selected]?.classList.add("wrong");
       }
-
-      updateHUD();
-
-      // Send result to ESP32 if needed
-      set(controlRef,{ result: selected === currentQuestion.a ? "correct" : "wrong" });
-
+      scoreLivesBox.textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
       setTimeout(()=>{
-        document.body.classList.remove("correct-flash","wrong-flash");
+        document.body.className="";
         resetChoices();
-
         if(lives<=0){
-          gameOverScreen();
+          gameOver();
         } else {
-          spinning = true;
-          spinCategory();
+          selectRandomCategory();
         }
-      },1000);
+      },1500);
     }
   },1000);
 }
 
-/* 🕹️ GAME OVER SCREEN */
-function gameOverScreen(){
+/* ⚡ GAME OVER */
+function gameOver(){
   gameState="gameover";
-  questionBox.textContent = "💀 GAME OVER";
-  spinner.textContent = "Press A button to Restart | B button to Main Menu";
-  timerBox.textContent = "";
-  suspenseBox.textContent = "";
+  spinner.textContent="💀 Game Over";
+  questionBox.textContent="Press A to Restart\nPress B to go to Main Menu";
+  timerBox.style.display="none";
+  suspenseBox.style.display="none";
+  Object.values(choices).forEach(c=>c.style.display="none");
 }
 
-/* 🕹️ MAIN MENU */
-function mainMenu(){
-  gameState="menu";
-  spinner.textContent = "Press A button to Start";
-  questionBox.textContent = "";
-  timerBox.textContent="";
-  suspenseBox.textContent="";
-  resetChoices();
-  score=0; lives=5;
-  updateHUD();
-}
-
-/* 🎯 ESP32 BUTTON INPUT */
+/* 🔌 ESP32 BUTTON INPUT */
 onValue(controlRef, snapshot=>{
   const data = snapshot.val();
   if(!data || !data.button) return;
-  const btn = data.button;
-  set(controlRef,{button:""});
+  const btn=data.button;
+  set(controlRef,{button:""}); // reset
 
-  // BUTTON LOGIC BASED ON GAME STATE
   if(gameState==="menu"){
-    if(btn==="A") { gameState="playing"; spinCategory(); }
-  } else if(gameState==="playing"){
-    if(spinning) { spinCategory(); return; }
-    if(!canAnswer) return;
+    if(btn==="A"){ // Start
+      score=0; lives=5;
+      scoreLivesBox.textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+      showGameUI();
+      selectRandomCategory();
+    }
+    else if(btn==="B"){ alert("Settings screen coming soon"); }
+    else if(btn==="C"){ alert("Leaderboard screen coming soon"); }
+    else if(btn==="D"){ alert("Introduction: This is our IT Quiz Project"); }
+    return;
+  }
 
+  if(gameState==="playing"){
+    if(!canAnswer) return;
     canAnswer=false;
     choices[btn]?.classList.add("active");
     revealAnswer(btn);
-  } else if(gameState==="gameover"){
-    if(btn==="A") { score=0; lives=5; updateHUD(); gameState="playing"; spinCategory(); }
-    else if(btn==="B"){ mainMenu(); }
+  }
+
+  if(gameState==="gameover"){
+    if(btn==="A"){ // restart
+      score=0; lives=5;
+      scoreLivesBox.textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+      showGameUI();
+      selectRandomCategory();
+    }
+    if(btn==="B"){ showMenu(); }
   }
 });
-
-/* 🔹 START AT MAIN MENU */
-mainMenu();
