@@ -2,23 +2,88 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Byte by Byte: IT Quiz Challenge</title>
+<title>Byte by Byte: IT Quiz Challenge - Menu</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: Arial,sans-serif; text-align:center; background:#0f172a; color:white; }
-h1 { margin-top:50px; color:#fde047; }
-.menu-option { margin:25px 0; font-size:1.4rem; background:#334155; padding:15px; border-radius:12px; cursor:pointer; }
-.menu-option:hover { background:#6366f1; color:white; }
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  transition: background 0.5s;
+}
+h1 { margin-bottom: 20px; color:#fde047; }
+.menuItem {
+  background:#1e293b;
+  padding:20px;
+  margin:10px auto;
+  width:300px;
+  border-radius:12px;
+  font-size:1.5rem;
+  transition: background 0.3s;
+}
+.active { background:#fde047; color:black; }
 </style>
 </head>
 <body>
 <h1>🕹️ Byte by Byte</h1>
-<h2>IT Quiz Challenge</h2>
+<h2>Main Menu</h2>
 
-<div class="menu-option" onclick="location.href='start.html'">Start</div>
-<div class="menu-option" onclick="location.href='settings.html'">Settings</div>
-<div class="menu-option" onclick="location.href='leaderboard.html'">Leaderboard</div>
-<div class="menu-option" onclick="location.href='introduction.html'">Introduction</div>
+<div id="menu">
+  <div class="menuItem active" data-target="start.html">Start</div>
+  <div class="menuItem" data-target="settings.html">Settings</div>
+  <div class="menuItem" data-target="leaderboard.html">Leaderboard</div>
+  <div class="menuItem" data-target="intro.html">Introduction</div>
+</div>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
+  authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
+  databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
+  projectId: "byte-by-byte-f7a4c",
+  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  messagingSenderId: "838552047744",
+  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+};
+
+/* 🔌 INITIALIZE FIREBASE */
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const controlRef = ref(db,"control");
+
+/* 🎮 MENU LOGIC */
+const menuItems = Array.from(document.querySelectorAll(".menuItem"));
+let currentIndex = 0;
+
+function updateMenu(){
+  menuItems.forEach((el,i)=> el.classList.toggle("active", i===currentIndex));
+}
+
+/* 🔌 ESP32 BUTTON NAVIGATION */
+onValue(controlRef, snapshot => {
+  const data = snapshot.val();
+  if(!data||!data.button) return;
+  const btn = data.button;
+  console.log("Button pressed:", btn); 
+  set(controlRef,{button:""}); // reset immediately
+
+  if(btn==="A"){ // Move up
+    currentIndex = (currentIndex-1 + menuItems.length) % menuItems.length;
+    updateMenu();
+  } else if(btn==="B"){ // Move down
+    currentIndex = (currentIndex+1) % menuItems.length;
+    updateMenu();
+  } else if(btn==="C" || btn==="D"){ // Select
+    const target = menuItems[currentIndex].dataset.target;
+    window.location.href = target;
+  }
+});
+</script>
 </body>
 </html>
