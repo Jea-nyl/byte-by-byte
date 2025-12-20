@@ -2,39 +2,246 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Byte by Byte - Game</title>
+<title>Byte by Byte: IT Quiz Challenge</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
-body { font-family:'Roboto',sans-serif; background:linear-gradient(to right,#0f172a,#1e293b); color:white; text-align:center; margin:0; padding:20px; transition: background 0.5s; }
-#spinner,#timer,#suspense,#question,#scoreLives{margin:15px auto;padding:18px;width:340px;border-radius:16px;background:#475569;}
-.choices{display:grid;grid-template-columns:repeat(2,160px);gap:20px;justify-content:center;margin-top:30px;}
-.choice{padding:22px;border-radius:16px;background:#6366f1;cursor:pointer;}
-.correct-flash{animation:flashGreen 1s ease-in-out 1 forwards;}
-.wrong-flash{animation:flashRed 1s ease-in-out 1 forwards;}
-@keyframes flashGreen{0%{background:linear-gradient(to right,#0f172a,#1e293b);}50%{background:#14532d;}100%{background:linear-gradient(to right,#0f172a,#1e293b);}}
-@keyframes flashRed{0%{background:linear-gradient(to right,#0f172a,#1e293b);}50%{background:#7f1d1d;}100%{background:linear-gradient(to right,#0f172a,#1e293b);}}
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  transition: background 0.5s;
+}
+h1 { margin-bottom: 5px; color:#fde047; }
+#spinner, #timer, #suspense, #scoreLives {
+  margin: 15px auto;
+  font-size: 1.5rem;
+  padding: 15px;
+  width: 320px;
+  background: #1e293b;
+  border-radius: 12px;
+}
+.choiceContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 160px);
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+.choice {
+  padding: 18px;
+  border-radius: 12px;
+  background: #334155;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.5s;
+}
+.active { background: #fde047; color: black; }
+.correct { background: #22c55e; }
+.wrong { background: #ef4444; }
+.correct-flash { background-color: #14532d !important; transition: background 0.5s; }
+.wrong-flash { background-color: #7f1d1d !important; transition: background 0.5s; }
 </style>
 </head>
 <body>
-
 <h1>🕹️ Byte by Byte</h1>
-<h2>Gameplay</h2>
+<h2>IT Quiz Challenge</h2>
 
-<div id="spinner">Category will appear here</div>
-<div id="timer">⏱️ Time left</div>
-<div id="suspense">⏳ Suspense</div>
-<div id="question">Question will appear here</div>
-
-<div class="choices">
+<div id="spinner">📂 Press any button to start</div>
+<div id="timer"></div>
+<div id="suspense"></div>
+<div id="question"></div>
+<div id="scoreLives"></div>
+<div class="choiceContainer">
   <div id="A" class="choice">A</div>
   <div id="B" class="choice">B</div>
   <div id="C" class="choice">C</div>
   <div id="D" class="choice">D</div>
 </div>
 
-<div id="scoreLives">⭐ Score: 0 | ❤️ Lives: 5</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-<script type="module" src="main.js"></script>
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
+  authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
+  databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
+  projectId: "byte-by-byte-f7a4c",
+  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  messagingSenderId: "838552047744",
+  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+};
+
+/* 🔌 INITIALIZE FIREBASE */
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const controlRef = ref(db,"control");
+
+/* 🎮 UI ELEMENTS */
+const spinner = document.getElementById("spinner");
+const timerBox = document.getElementById("timer");
+const suspenseBox = document.getElementById("suspense");
+const questionBox = document.getElementById("question");
+const scoreLivesBox = document.getElementById("scoreLives");
+
+const choices = {
+  A: document.getElementById("A"),
+  B: document.getElementById("B"),
+  C: document.getElementById("C"),
+  D: document.getElementById("D")
+};
+
+/* 🎲 GAME DATA */
+const categories = {
+  Programming: [
+    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech Machine Language","Home Tool Markup Language","Hyperlinks Text Machine"], a:"A" },
+    { q:"CSS stands for?", c:["Creative Style Sheets","Cascading Style Sheets","Computer Style Sheet","Colorful Style Sheets"], a:"B" },
+    { q:"JS is used for?", c:["Styling pages","Adding interactivity","Database","Networking"], a:"B" },
+    { q:"Which is frontend?", c:["React","Node.js","MongoDB","Python"], a:"A" },
+    { q:"Which is backend?", c:["React","HTML","Node.js","CSS"], a:"C" }
+  ],
+  Networking: [
+    { q:"Device connecting networks?", c:["Router","RAM","CPU","SSD"], a:"A" },
+    { q:"IP stands for?", c:["Internet Protocol","Internal Process","Interface Program","Internet Page"], a:"A" },
+    { q:"TCP is?", c:["Transmission Control Protocol","Text Control Program","Terminal Communication Process","Transfer Connection Protocol"], a:"A" },
+    { q:"LAN means?", c:["Large Area Network","Local Area Network","Long Access Network","Local Application Network"], a:"B" },
+    { q:"DNS translates?", c:["IP to Name","Name to IP","Both","None"], a:"C" }
+  ]
+};
+
+/* 🎯 GAME STATE */
+let gameState="menu"; // menu / playing / gameover
+let currentCategory="";
+let currentQuestion=null;
+let canAnswer=false;
+let score=0;
+let lives=5;
+let answerTime = parseInt(localStorage.getItem("answerTime"))||10;
+let revealTime = parseInt(localStorage.getItem("revealTime"))||5;
+let answerInterval, suspenseInterval;
+
+/* 🧹 HELPERS */
+function resetChoices(){ Object.values(choices).forEach(c=>c.className="choice"); }
+function updateScoreLives(){ scoreLivesBox.textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`; }
+
+/* 🎡 RANDOM CATEGORY */
+function selectRandomCategory(){
+  const keys = Object.keys(categories);
+  currentCategory = keys[Math.floor(Math.random()*keys.length)];
+  spinner.textContent=`📂 Category: ${currentCategory}`;
+  loadQuestion();
+}
+
+/* ❓ LOAD QUESTION */
+function loadQuestion(){
+  const list = categories[currentCategory];
+  currentQuestion = list[Math.floor(Math.random()*list.length)];
+  questionBox.textContent=currentQuestion.q;
+  ["A","B","C","D"].forEach((l,i)=> choices[l].textContent=`${l}. ${currentQuestion.c[i]}`);
+  startAnswerTimer();
+}
+
+/* ⏱️ ANSWER TIMER */
+function startAnswerTimer(){
+  canAnswer=true;
+  let time=answerTime;
+  timerBox.textContent=`⏱️ Time left: ${time}s`;
+  answerInterval=setInterval(()=>{
+    time--;
+    timerBox.textContent=`⏱️ Time left: ${time}s`;
+    if(time<=0){
+      clearInterval(answerInterval);
+      canAnswer=false;
+      revealAnswer(null);
+    }
+  },1000);
+}
+
+/* ⏳ REVEAL ANSWER */
+function revealAnswer(selected){
+  resetChoices();
+  clearInterval(answerInterval);
+  let suspense=revealTime;
+  suspenseBox.textContent=`⏳ Revealing in ${suspense}s`;
+
+  suspenseInterval=setInterval(()=>{
+    suspense--;
+    suspenseBox.textContent=`⏳ Revealing in ${suspense}s`;
+    if(suspense<=0){
+      clearInterval(suspenseInterval);
+      suspenseBox.textContent="";
+      if(selected===currentQuestion.a){
+        document.body.classList.add("correct-flash");
+        score+=5;
+        choices[selected]?.classList.add("correct");
+      } else {
+        document.body.classList.add("wrong-flash");
+        lives--;
+        choices[currentQuestion.a]?.classList.add("correct");
+        if(selected) choices[selected]?.classList.add("wrong");
+      }
+      updateScoreLives();
+      setTimeout(()=>{
+        document.body.className="";
+        resetChoices();
+        if(lives<=0){
+          gameOver();
+        } else {
+          selectRandomCategory();
+        }
+      },1500);
+    }
+  },1000);
+}
+
+/* 💀 GAME OVER */
+function gameOver(){
+  gameState="gameover";
+  spinner.textContent="💀 Game Over";
+  questionBox.textContent="Press A to Restart\nPress B to go to Main Menu";
+  timerBox.style.display="none";
+  suspenseBox.style.display="none";
+  scoreLivesBox.style.display="none";
+  Object.values(choices).forEach(c=>c.style.display="none");
+}
+
+/* 🔌 ESP32 BUTTON INPUT */
+onValue(controlRef, snapshot=>{
+  const data=snapshot.val();
+  if(!data||!data.button) return;
+  const btn=data.button;
+  set(controlRef,{button:""}); // reset
+
+  if(gameState==="menu"){
+    if(btn==="A"){ // Start game
+      gameState="playing";
+      score=0; lives=5;
+      updateScoreLives();
+      Object.values(choices).forEach(c=>c.style.display="block");
+      spinner.style.display="block"; 
+      timerBox.style.display="block"; 
+      suspenseBox.style.display="block"; 
+      scoreLivesBox.style.display="block";
+      selectRandomCategory();
+    }
+    return;
+  }
+
+  if(gameState==="playing"){
+    if(!canAnswer) return;
+    canAnswer=false;
+    choices[btn]?.classList.add("active");
+    revealAnswer(btn);
+  }
+
+  if(gameState==="gameover"){
+    if(btn==="A"){ location.reload(); } // restart
+    if(btn==="B"){ location.href='index.html'; }
+  }
+});
+</script>
 </body>
 </html>
