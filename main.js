@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
@@ -15,10 +15,10 @@ const firebaseConfig = {
 /* 🔌 INITIALIZE FIREBASE */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const controlRef = ref(db, "control");
-const feedbackRef = ref(db, "feedback");
+const controlRef = ref(db,"control");
 
 /* 🎮 UI ELEMENTS */
+const spinner = document.getElementById("spinner");
 const timerBox = document.getElementById("timer");
 const suspenseBox = document.getElementById("suspense");
 const questionBox = document.getElementById("question");
@@ -30,69 +30,60 @@ const choices = {
   D: document.getElementById("D")
 };
 
-/* 📚 QUESTIONS (example categories) */
+/* 📚 QUESTIONS (example, expand as needed) */
 const categories = {
   Programming: [
-    {
-      q: "HTML stands for?",
-      c: ["Hyper Text Markup Language","High Tech Machine Language","Home Tool Markup Language","Hyperlinks Text Machine"],
-      a: "A"
-    }
+    { q: "HTML stands for?", c:["Hyper Text Markup Language","High Tech Machine Language","Home Tool Markup Language","Hyperlinks Text Machine"], a:"A" }
   ],
   Networking: [
-    {
-      q: "What device connects networks?",
-      c: ["Router","RAM","CPU","SSD"],
-      a: "A"
-    }
+    { q: "What device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" }
   ]
 };
 
 /* 🎯 GAME STATE */
+let spinning = true;
 let currentCategory = "";
 let currentQuestion = null;
 let canAnswer = false;
-
-let answerTime = 10;
-let suspenseTime = 5;
-let answerInterval, suspenseInterval;
-let score = 0;
 let lives = 5;
+let playerScore = 0;
+
+let answerTime = parseInt(localStorage.getItem("answerTime"))||10;
+let suspenseTime = parseInt(localStorage.getItem("revealTime"))||5;
+let answerInterval, suspenseInterval;
 
 /* 🧹 HELPERS */
 function resetChoices(){
-  Object.values(choices).forEach(c => c.className="choice");
+  Object.values(choices).forEach(c => c.className = "choice");
 }
 
-function pickRandomCategory(){
+function spinCategory(){
   const keys = Object.keys(categories);
   currentCategory = keys[Math.floor(Math.random()*keys.length)];
+  spinner.textContent = `📂 Category: ${currentCategory}`;
   loadQuestion();
+  spinning = false;
 }
 
 function loadQuestion(){
   const list = categories[currentCategory];
   currentQuestion = list[Math.floor(Math.random()*list.length)];
   questionBox.textContent = currentQuestion.q;
-
   ["A","B","C","D"].forEach((l,i)=>{
     choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
   });
-
   startAnswerTimer();
 }
 
-/* ⏱️ 10s answer timer */
+/* ⏱️ 10s ANSWER TIMER */
 function startAnswerTimer(){
-  canAnswer=true;
-  answerTime=10;
-  timerBox.textContent=`⏱️ Time left: ${answerTime}s`;
-
+  canAnswer = true;
+  let timeLeft = answerTime;
+  timerBox.textContent = `⏱️ Time left: ${timeLeft}s`;
   answerInterval = setInterval(()=>{
-    answerTime--;
-    timerBox.textContent=`⏱️ Time left: ${answerTime}s`;
-
-    if(answerTime<=0){
+    timeLeft--;
+    timerBox.textContent = `⏱️ Time left: ${timeLeft}s`;
+    if(timeLeft<=0){
       clearInterval(answerInterval);
       canAnswer=false;
       revealAnswer(null);
@@ -100,77 +91,88 @@ function startAnswerTimer(){
   },1000);
 }
 
-/* ⏳ 5s suspense + result */
+/* ⏳ 5s SUSPENSE + RESULT */
 function revealAnswer(selected){
   resetChoices();
   clearInterval(answerInterval);
-
-  suspenseTime=5;
-  suspenseBox.textContent=`⏳ Revealing in ${suspenseTime}s`;
-
+  let suspense = suspenseTime;
+  suspenseBox.textContent = `⏳ Revealing in ${suspense}s`;
   suspenseInterval = setInterval(()=>{
-    suspenseTime--;
-    suspenseBox.textContent=`⏳ Revealing in ${suspenseTime}s`;
-
-    if(suspenseTime<=0){
+    suspense--;
+    suspenseBox.textContent = `⏳ Revealing in ${suspense}s`;
+    if(suspense<=0){
       clearInterval(suspenseInterval);
-      suspenseBox.textContent="";
+      suspenseBox.textContent = "";
 
-      if(selected === currentQuestion.a){
+      if(selected===currentQuestion.a){
+        playerScore +=5;
+        document.body.style.transition="background 0.5s";
         document.body.style.background="#14532d"; // green flash
         choices[selected].classList.add("correct");
-        score+=5;
-        set(feedbackRef,"correct"); // buzzer feedback
       } else {
+        lives--;
+        document.body.style.transition="background 0.5s";
         document.body.style.background="#7f1d1d"; // red flash
         if(selected) choices[selected].classList.add("wrong");
         choices[currentQuestion.a].classList.add("correct");
-        lives--;
-        set(feedbackRef,"wrong"); // buzzer feedback
       }
 
       setTimeout(()=>{
         document.body.style.background="#0f172a";
-        resetChoices();
-
         if(lives<=0){
-          questionBox.textContent="Game Over";
-          suspenseBox.textContent="Press A to restart, B for Menu";
-          return;
+          gameOver();
+        } else {
+          spinning=true;
+          spinCategory();
         }
-
-        pickRandomCategory();
-      },2000);
+      },1000);
     }
   },1000);
 }
 
-/* 🎯 ESP32 BUTTON INPUT */
-onValue(controlRef,snapshot=>{
+/* 💀 GAME OVER */
+function gameOver(){
+  spinner.textContent="💀 Game Over!";
+  questionBox.textContent="Press C to restart, D to Main Menu";
+  resetChoices();
+  canAnswer=false;
+
+  // Push score to Firebase
+  const leaderboardRef = ref(db,"leaderboard");
+  push(leaderboardRef,{
+    score: playerScore,
+    timestamp: Date.now()
+  });
+}
+
+/* 🔌 ESP32 BUTTON INPUT */
+onValue(controlRef, snapshot=>{
   const data = snapshot.val();
   if(!data || !data.button) return;
   const btn = data.button;
+  set(controlRef,{button:""}); // reset
 
-  // Reset control
-  set(controlRef,{button:""});
+  if(spinning){
+    spinCategory();
+    return;
+  }
 
-  // Skip suspense if pressed
-  if(!canAnswer && suspenseInterval){
-    clearInterval(suspenseInterval);
-    suspenseBox.textContent="";
-    revealAnswer(btn);
+  if(!canAnswer && lives>0){
+    // Game over controls
+    if(btn==="C"){ // restart
+      lives=5; playerScore=0; spinning=true; spinCategory();
+    } else if(btn==="D"){ // back to menu
+      window.location.href="index.html";
+    }
     return;
   }
 
   if(!canAnswer) return;
-  canAnswer=false;
 
+  canAnswer=false;
   choices[btn].classList.add("active");
   revealAnswer(btn);
 });
 
-/* ⚡ Start the game */
-pickRandomCategory();
-
-// Send start buzzer feedback
-set(feedbackRef,"start");
+/* 🎉 START GAME */
+spinner.textContent="🎡 Press any button to start";
