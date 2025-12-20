@@ -22,6 +22,7 @@ const spinner = document.getElementById("spinner");
 const timerBox = document.getElementById("timer");
 const suspenseBox = document.getElementById("suspense");
 const questionBox = document.getElementById("question");
+const scoreLivesBox = document.getElementById("scoreLives");
 
 const choices = {
   A: document.getElementById("A"),
@@ -30,33 +31,33 @@ const choices = {
   D: document.getElementById("D")
 };
 
-/* 🏆 SCORE & LIVES */
-let score = 0;
-let lives = 5;
-const scoreBox = document.createElement("div");
-scoreBox.style.marginTop = "10px";
-document.body.insertBefore(scoreBox, spinner.nextSibling);
-
-function updateHUD() {
-  scoreBox.innerHTML = `⭐ Score: ${score} | ❤️ Lives: ${lives}`;
-}
-updateHUD();
-
 /* 📚 QUESTIONS */
 const categories = {
   Programming: [
-    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech","Home Tool","Hyperlinks"], a:"A" }
+    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech","Home Tool","Hyperlinks"], a:"A" },
+    { q:"CSS is used for?", c:["Styling","Programming","Database","Networking"], a:"A" },
+    { q:"JavaScript is?", c:["Programming language","Database","Hardware","Network protocol"], a:"A" },
+    { q:"Bootstrap is?", c:["CSS framework","Database","OS","Server"], a:"A" },
+    { q:"Git is used for?", c:["Version control","Networking","CPU","Storage"], a:"A" }
   ],
   Networking: [
-    { q:"What device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" }
+    { q:"What device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" },
+    { q:"IP stands for?", c:["Internet Protocol","Internal Process","Instant Print","Input Port"], a:"A" },
+    { q:"LAN means?", c:["Local Area Network","Large Access Node","Linked Application","Light Area Network"], a:"A" },
+    { q:"HTTP is?", c:["Protocol","Programming language","Hardware","Software"], a:"A" },
+    { q:"DNS translates?", c:["Domain names to IP","HTML to CSS","JavaScript to HTML","IP to URL"], a:"A" }
   ]
 };
 
 /* 🎯 GAME STATE */
-let spinning = true;
+let gameState = "menu"; // menu, playing, gameover
+let spinning = false;
 let currentCategory = "";
 let currentQuestion = null;
 let canAnswer = false;
+
+let score = 0;
+let lives = 5;
 
 let answerTime = 10;
 let suspenseTime = 5;
@@ -67,20 +68,29 @@ function resetChoices() {
   Object.values(choices).forEach(c => c.className = "choice");
 }
 
-/* 🎡 SPIN CATEGORY */
-function spinCategory() {
-  spinner.classList.add("spin");
-  spinner.textContent = "🎡 Spinning...";
+function updateHUD() {
+  scoreLivesBox.innerHTML = `⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+}
 
-  const keys = Object.keys(categories);
-  currentCategory = keys[Math.floor(Math.random() * keys.length)];
+/* 🎡 RANDOM CATEGORY "SPINNER" */
+function spinCategory() {
+  spinning = true;
+  const categoryKeys = Object.keys(categories);
+  let i = 0;
+
+  spinner.textContent = "🎡 Selecting category...";
+  const flashInterval = setInterval(() => {
+    spinner.textContent = `📂 ${categoryKeys[i % categoryKeys.length]}`;
+    i++;
+  }, 100);
 
   setTimeout(() => {
-    spinner.classList.remove("spin");
+    clearInterval(flashInterval);
+    currentCategory = categoryKeys[Math.floor(Math.random() * categoryKeys.length)];
     spinner.textContent = `📂 Category: ${currentCategory}`;
     loadQuestion();
     spinning = false;
-  }, 2000);
+  }, 1500);
 }
 
 /* ❓ LOAD QUESTION */
@@ -89,100 +99,121 @@ function loadQuestion() {
   currentQuestion = list[Math.floor(Math.random() * list.length)];
 
   questionBox.textContent = currentQuestion.q;
-
-  ["A","B","C","D"].forEach((l, i) => {
+  ["A","B","C","D"].forEach((l,i)=>{
     choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
   });
 
   startAnswerTimer();
 }
 
-/* ⏱️ 10-SECOND ANSWER TIMER */
+/* ⏱️ ANSWER TIMER 10s */
 function startAnswerTimer() {
   canAnswer = true;
   answerTime = 10;
   timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
 
-  answerInterval = setInterval(() => {
+  answerInterval = setInterval(()=>{
     answerTime--;
     timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
 
-    if (answerTime <= 0) {
+    if(answerTime <= 0){
       clearInterval(answerInterval);
       canAnswer = false;
       revealAnswer(null);
     }
-  }, 1000);
+  },1000);
 }
 
-/* ⏳ 5-SECOND SUSPENSE + RESULT */
-function revealAnswer(selected) {
+/* ⏳ SUSPENSE + RESULT */
+function revealAnswer(selected){
   clearInterval(answerInterval);
   suspenseTime = 5;
   suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
 
-  suspenseInterval = setInterval(() => {
+  suspenseInterval = setInterval(()=>{
     suspenseTime--;
     suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
 
-    if (suspenseTime <= 0) {
+    if(suspenseTime <=0){
       clearInterval(suspenseInterval);
       suspenseBox.textContent = "";
 
-      let result = "wrong";
+      resetChoices();
 
-      if (selected === currentQuestion.a) {
-        result = "correct";
-        score += 5;
-        document.body.style.background = "#14532d"; // green flash
+      if(selected === currentQuestion.a){
+        document.body.classList.add("correct-flash");
+        score +=5;
         choices[selected]?.classList.add("correct");
       } else {
+        document.body.classList.add("wrong-flash");
         lives--;
-        document.body.style.background = "#7f1d1d"; // red flash
         choices[currentQuestion.a]?.classList.add("correct");
-        if (selected) choices[selected]?.classList.add("wrong");
+        if(selected) choices[selected]?.classList.add("wrong");
       }
 
       updateHUD();
 
-      // 🔌 Send result to ESP32
-      set(controlRef, { result });
+      // Send result to ESP32 if needed
+      set(controlRef,{ result: selected === currentQuestion.a ? "correct" : "wrong" });
 
-      setTimeout(() => {
-        document.body.style.background = "#0f172a";
-
-        // 🔹 Remove highlights before next question
+      setTimeout(()=>{
+        document.body.classList.remove("correct-flash","wrong-flash");
         resetChoices();
 
-        if (lives <= 0) {
-          questionBox.textContent = "💀 GAME OVER";
-          spinner.textContent = `FINAL SCORE: ${score}`;
-          return;
+        if(lives<=0){
+          gameOverScreen();
+        } else {
+          spinning = true;
+          spinCategory();
         }
-
-        spinning = true;
-        spinCategory();
-      }, 2000);
+      },1000);
     }
-  }, 1000);
+  },1000);
+}
+
+/* 🕹️ GAME OVER SCREEN */
+function gameOverScreen(){
+  gameState="gameover";
+  questionBox.textContent = "💀 GAME OVER";
+  spinner.textContent = "Press A button to Restart | B button to Main Menu";
+  timerBox.textContent = "";
+  suspenseBox.textContent = "";
+}
+
+/* 🕹️ MAIN MENU */
+function mainMenu(){
+  gameState="menu";
+  spinner.textContent = "Press A button to Start";
+  questionBox.textContent = "";
+  timerBox.textContent="";
+  suspenseBox.textContent="";
+  resetChoices();
+  score=0; lives=5;
+  updateHUD();
 }
 
 /* 🎯 ESP32 BUTTON INPUT */
-onValue(controlRef, snapshot => {
+onValue(controlRef, snapshot=>{
   const data = snapshot.val();
-  if (!data || !data.button) return;
-
+  if(!data || !data.button) return;
   const btn = data.button;
-  set(controlRef, { button: "" });
+  set(controlRef,{button:""});
 
-  if (spinning) {
-    spinCategory();
-    return;
+  // BUTTON LOGIC BASED ON GAME STATE
+  if(gameState==="menu"){
+    if(btn==="A") { gameState="playing"; spinCategory(); }
+  } else if(gameState==="playing"){
+    if(spinning) { spinCategory(); return; }
+    if(!canAnswer) return;
+
+    canAnswer=false;
+    choices[btn]?.classList.add("active");
+    revealAnswer(btn);
+  } else if(gameState==="gameover"){
+    if(btn==="A") { score=0; lives=5; updateHUD(); gameState="playing"; spinCategory(); }
+    else if(btn==="B"){ mainMenu(); }
   }
-
-  if (!canAnswer) return;
-
-  canAnswer = false;
-  choices[btn].classList.add("active");
-  revealAnswer(btn);
 });
+
+/* 🔹 START AT MAIN MENU */
+mainMenu();
