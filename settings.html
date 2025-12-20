@@ -23,6 +23,7 @@ h1 { color:#fde047; }
   transition: background 0.3s;
 }
 .active { background:#fde047; color:black; }
+.selected { border: 3px solid #22c55e; }
 </style>
 </head>
 <body>
@@ -33,7 +34,7 @@ h1 { color:#fde047; }
   <div class="settingItem" data-key="revealTime">Reveal Time: <span id="revealTimeDisplay"></span>s</div>
 </div>
 
-<p>Use A/B to move/change value, C to select, D to save & go back</p>
+<p>Use A/B to move/change, C to select/unselect, D to save & return</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -47,7 +48,7 @@ const firebaseConfig = {
   projectId: "byte-by-byte-f7a4c",
   storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
   messagingSenderId: "838552047744",
-  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+  appId: "1:838552047744:web:f653b9fba96e49d665"
 };
 
 /* 🔌 INITIALIZE FIREBASE */
@@ -73,7 +74,10 @@ function updateDisplay() {
 }
 
 function updateActive() {
-  settingsItems.forEach((el,i)=> el.classList.toggle("active", i===currentIndex));
+  settingsItems.forEach((el,i)=>{
+    el.classList.toggle("active", i===currentIndex);
+    el.classList.toggle("selected", i===selectedIndex);
+  });
 }
 
 updateDisplay();
@@ -82,35 +86,50 @@ updateActive();
 /* 🔌 ESP32 BUTTON CONTROLS */
 onValue(controlRef, snapshot => {
   const data = snapshot.val();
-  if(!data||!data.button) return;
+  if(!data || !data.button) return;
   const btn = data.button;
-  console.log("Button pressed:", btn); 
   set(controlRef,{button:""}); // reset
 
   const currentItem = settingsItems[currentIndex];
   const key = currentItem.dataset.key;
 
-  if(btn==="A"){ // Move up
-    currentIndex = (currentIndex-1 + settingsItems.length) % settingsItems.length;
-    // If selected, increase value
-    if(selectedIndex === currentIndex){
+  if(btn==="C"){ // toggle select/unselect
+    if(selectedIndex===currentIndex){
+      selectedIndex=null;
+    } else {
+      selectedIndex=currentIndex;
+    }
+    updateActive();
+    return;
+  }
+
+  if(btn==="A"){
+    if(selectedIndex===currentIndex){
+      // increase value
       if(key==="answerTime") answerTime++;
       if(key==="revealTime") revealTime++;
+    } else {
+      // move up
+      currentIndex = (currentIndex-1 + settingsItems.length) % settingsItems.length;
     }
     updateActive();
     updateDisplay();
-  } else if(btn==="B"){ // Move down
-    currentIndex = (currentIndex+1)%settingsItems.length;
-    if(selectedIndex === currentIndex){
+  }
+
+  if(btn==="B"){
+    if(selectedIndex===currentIndex){
+      // decrease value
       if(key==="answerTime" && answerTime>1) answerTime--;
       if(key==="revealTime" && revealTime>1) revealTime--;
+    } else {
+      // move down
+      currentIndex = (currentIndex+1) % settingsItems.length;
     }
     updateActive();
     updateDisplay();
-  } else if(btn==="C"){ // Select/focus current item
-    selectedIndex = currentIndex;
-    console.log("Selected item:", key);
-  } else if(btn==="D"){ // Save & Back to Main Menu
+  }
+
+  if(btn==="D"){ // save & back to menu
     localStorage.setItem("answerTime", answerTime);
     localStorage.setItem("revealTime", revealTime);
     window.location.href="index.html";
