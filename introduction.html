@@ -2,23 +2,100 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Introduction</title>
+<title>Introduction - Byte by Byte</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{background:#0f172a;color:white;text-align:center;font-family:Arial,sans-serif;padding:20px;}
-h1{color:#fde047;}
-p{margin-top:30px;font-size:1.2rem;}
-button{padding:10px 20px;margin-top:20px;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;}
-button:hover{background:#475569;}
+body {
+  font-family: Arial, sans-serif;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+h1 { color:#fde047; margin-bottom:20px; }
+#introContent {
+  max-height:400px;
+  overflow-y:auto;
+  margin-top:20px;
+  padding:15px;
+  background:#1e293b;
+  border-radius:12px;
+  line-height:1.6;
+  text-align:left;
+  font-size:1.1rem;
+}
+p { margin-bottom:10px; }
 </style>
 </head>
 <body>
-<h1>Introduction</h1>
-<p>
-This is our IT Quiz Project "Byte by Byte". It is a quiz game using ESP32 buttons for input, 
-with live score, lives, and timers displayed. Categories include Programming and Networking. 
-Designed for educational fun and testing IT knowledge.
-</p>
-<button onclick="location.href='index.html'">Back to Menu</button>
+<h1>📖 Introduction</h1>
+
+<div id="introContent">
+<p>Welcome to Byte by Byte: IT Challenge!</p>
+
+<p>The stage is set. The questions are ready. Only the sharpest minds will survive this test of IT knowledge.
+  Each round will challenge you with four choices—only one is correct. Every correct answer brings you closer to victory,
+  while every mistake is a lesson learned.</p>
+
+<p>This is your arena. Your skills, your speed, and your knowledge will be put to the test. 
+  Can you answer them all and rise to the top? Can you prove that you have what it takes to master the Byte by Byte challenge?</p>
+
+<p>Step forward, focus your mind, and prepare yourself. 
+  The game begins now. Every byte counts, every choice matters,
+  and your journey to becoming an IT champion starts here!</p>
+</div>
+
+<p>Use A/B to scroll, D to return to Menu</p>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
+  authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
+  databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
+  projectId: "byte-by-byte-f7a4c",
+  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  messagingSenderId: "838552047744",
+  appId: "1:838552047744:web:f653b9fba96e49d665"
+};
+
+/* 🔌 INITIALIZE FIREBASE */
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const controlRef = ref(db,"control");
+
+const introDiv = document.getElementById("introContent");
+const lines = introDiv.querySelectorAll("p");
+let scrollIndex = 0;
+const visibleLines = 4; // number of lines visible at a time
+
+function renderScroll(){
+  lines.forEach((p,i)=>{
+    p.style.display = (i>=scrollIndex && i<scrollIndex+visibleLines) ? "block" : "none";
+  });
+}
+
+renderScroll();
+
+/* 🔌 ESP32 BUTTON CONTROLS */
+onValue(controlRef, snapshot=>{
+  const btn = snapshot.val()?.button;
+  if(!btn) return;
+  set(controlRef,{button:""}); // reset
+
+  if(btn==="A"){ // scroll up
+    scrollIndex = Math.max(0, scrollIndex-1);
+    renderScroll();
+  } else if(btn==="B"){ // scroll down
+    scrollIndex = Math.min(lines.length - visibleLines, scrollIndex+1);
+    renderScroll();
+  } else if(btn==="D"){ // back to menu
+    window.location.href="index.html";
+  }
+});
+</script>
 </body>
 </html>
