@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔥 YOUR FIREBASE CONFIG (INSERTED) */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
@@ -30,26 +30,25 @@ const choices = {
   D: document.getElementById("D")
 };
 
+/* 🏆 SCORE & LIVES */
+let score = 0;
+let lives = 5;
+const scoreBox = document.createElement("div");
+scoreBox.style.marginTop = "10px";
+document.body.insertBefore(scoreBox, spinner.nextSibling);
+
+function updateHUD() {
+  scoreBox.innerHTML = `⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+}
+updateHUD();
+
 /* 📚 QUESTIONS */
 const categories = {
   Programming: [
-    {
-      q: "HTML stands for?",
-      c: [
-        "Hyper Text Markup Language",
-        "High Tech Machine Language",
-        "Home Tool Markup Language",
-        "Hyperlinks Text Machine"
-      ],
-      a: "A"
-    }
+    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech","Home Tool","Hyperlinks"], a:"A" }
   ],
   Networking: [
-    {
-      q: "What device connects networks?",
-      c: ["Router", "RAM", "CPU", "SSD"],
-      a: "A"
-    }
+    { q:"What device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" }
   ]
 };
 
@@ -132,17 +131,34 @@ function revealAnswer(selected) {
       clearInterval(suspenseInterval);
       suspenseBox.textContent = "";
 
+      let result = "wrong";
+
       if (selected === currentQuestion.a) {
-        document.body.style.background = "#14532d";
+        result = "correct";
+        score += 5;
+        document.body.style.background = "#14532d"; // green
         choices[selected]?.classList.add("correct");
       } else {
-        document.body.style.background = "#7f1d1d";
+        lives--;
+        document.body.style.background = "#7f1d1d"; // red
         choices[currentQuestion.a].classList.add("correct");
         if (selected) choices[selected].classList.add("wrong");
       }
 
+      updateHUD();
+
+      // 🔌 SEND RESULT TO ESP32
+      set(controlRef, { result });
+
       setTimeout(() => {
         document.body.style.background = "#0f172a";
+
+        if (lives <= 0) {
+          questionBox.textContent = "💀 GAME OVER";
+          spinner.textContent = `FINAL SCORE: ${score}`;
+          return;
+        }
+
         spinning = true;
         spinCategory();
       }, 2000);
