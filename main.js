@@ -1,9 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/***********************
- * FIREBASE CONFIG
- ***********************/
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
@@ -11,203 +9,170 @@ const firebaseConfig = {
   projectId: "byte-by-byte-f7a4c",
   storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
   messagingSenderId: "838552047744",
-  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+  appId: "1:838552047744:web:f653b9fba96e49d665"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+/* 🔌 INITIALIZE FIREBASE */
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const controlRef = ref(db,"control");
 
-/***********************
- * DOM ELEMENTS
- ***********************/
-const questionBox = document.getElementById("question");
-const suspenseBox = document.getElementById("suspense");
+/* 🎮 UI ELEMENTS */
+const spinner = document.getElementById("spinner");
 const timerBox = document.getElementById("timer");
-const scoreBox = document.getElementById("score");
-const livesBox = document.getElementById("lives");
+const suspenseBox = document.getElementById("suspense");
+const questionBox = document.getElementById("question");
 
 const choices = {
-  A: document.getElementById("choiceA"),
-  B: document.getElementById("choiceB"),
-  C: document.getElementById("choiceC"),
-  D: document.getElementById("choiceD")
+  A: document.getElementById("A"),
+  B: document.getElementById("B"),
+  C: document.getElementById("C"),
+  D: document.getElementById("D")
 };
 
-/***********************
- * GAME STATE
- ***********************/
-let score = 0;
-let lives = 5;
-let currentQuestion = null;
-let selectedChoice = null;
-
-let answerTimer = null;
-let suspenseTimer = null;
-let timeLeft = 10;
-
-/***********************
- * QUESTIONS
- ***********************/
+/* 📚 QUESTIONS (example, expand as needed) */
 const categories = {
-  NETWORKING: [
-    { q: "What device connects different networks together?", c: ["Router", "Switch", "Hub", "Modem"], a: "A" },
-    { q: "What does IP stand for?", c: ["Internet Provider", "Internet Protocol", "Internal Program", "Input Port"], a: "B" },
-    { q: "Which cable is commonly used in LAN?", c: ["HDMI", "Ethernet", "VGA", "USB"], a: "B" },
-    { q: "What network covers a small area like a room?", c: ["WAN", "MAN", "LAN", "PAN"], a: "C" },
-    { q: "Which device sends data wirelessly?", c: ["Router", "Switch", "Repeater", "Access Point"], a: "D" }
+  Programming: [
+    { q: "HTML stands for?", c:["Hyper Text Markup Language","High Tech Machine Language","Home Tool Markup Language","Hyperlinks Text Machine"], a:"A" }
   ],
-
-  HARDWARE: [
-    { q: "Which part is the brain of the computer?", c: ["RAM", "CPU", "Hard Drive", "GPU"], a: "B" },
-    { q: "Which stores data permanently?", c: ["RAM", "Cache", "SSD", "Register"], a: "C" },
-    { q: "What device displays output?", c: ["Keyboard", "Mouse", "Monitor", "Scanner"], a: "C" },
-    { q: "Which is an input device?", c: ["Printer", "Speaker", "Monitor", "Keyboard"], a: "D" },
-    { q: "What hardware is used to hear sound?", c: ["Microphone", "Speaker", "Webcam", "Monitor"], a: "B" }
-  ],
-
-  SOFTWARE: [
-    { q: "Which is an operating system?", c: ["Google", "Windows", "Chrome", "Intel"], a: "B" },
-    { q: "Which software is used for documents?", c: ["MS Word", "Photoshop", "Chrome", "Zoom"], a: "A" },
-    { q: "What software controls the hardware?", c: ["Application", "Driver", "Operating System", "Browser"], a: "C" },
-    { q: "Which is a programming language?", c: ["HTML", "Python", "HTTP", "WiFi"], a: "B" },
-    { q: "Which is NOT software?", c: ["Linux", "Windows", "Mouse", "Android"], a: "C" }
-  ],
-
-  PEOPLE: [
-    { q: "Who writes computer programs?", c: ["Designer", "Programmer", "User", "Technician"], a: "B" },
-    { q: "Who maintains computer systems?", c: ["System Administrator", "Student", "Teacher", "User"], a: "A" },
-    { q: "Who analyzes system requirements?", c: ["Analyst", "Coder", "Operator", "Tester"], a: "A" },
-    { q: "Who tests software for errors?", c: ["Programmer", "Tester", "User", "Manager"], a: "B" },
-    { q: "Who manages IT projects?", c: ["Technician", "Manager", "Analyst", "Operator"], a: "B" }
-  ],
-
-  DATABASE: [
-    { q: "What is a database?", c: ["A website", "A collection of data", "A program", "A computer"], a: "B" },
-    { q: "Which is a database software?", c: ["MySQL", "HTML", "CSS", "Java"], a: "A" },
-    { q: "What is a table in a database?", c: ["Row only", "Column only", "Structured data", "File"], a: "C" },
-    { q: "What identifies a record uniquely?", c: ["Foreign Key", "Primary Key", "Index", "Row"], a: "B" },
-    { q: "Which command retrieves data?", c: ["INSERT", "UPDATE", "DELETE", "SELECT"], a: "D" }
+  Networking: [
+    { q: "What device connects networks?", c:["Router","RAM","CPU","SSD"], a:"A" }
   ]
 };
 
-let availableQuestions = JSON.parse(JSON.stringify(categories));
+/* 🎯 GAME STATE */
+let spinning = true;
+let currentCategory = "";
+let currentQuestion = null;
+let canAnswer = false;
+let lives = 5;
+let playerScore = 0;
 
-/***********************
- * GAME FUNCTIONS
- ***********************/
-function resetChoices() {
-  selectedChoice = null;
-  Object.values(choices).forEach(btn => {
-    btn.className = "choice";
-  });
-  document.body.classList.remove("correct", "wrong");
+let answerTime = parseInt(localStorage.getItem("answerTime"))||10;
+let suspenseTime = parseInt(localStorage.getItem("revealTime"))||5;
+let answerInterval, suspenseInterval;
+
+/* 🧹 HELPERS */
+function resetChoices(){
+  Object.values(choices).forEach(c => c.className = "choice");
 }
 
-function startAnswerTimer() {
-  clearInterval(answerTimer);
-  timeLeft = 10;
-  timerBox.textContent = `⏱️ ${timeLeft}`;
-
-  answerTimer = setInterval(() => {
-    timeLeft--;
-    timerBox.textContent = `⏱️ ${timeLeft}`;
-
-    if (timeLeft <= 0) {
-      clearInterval(answerTimer);
-      revealAnswer();
-    }
-  }, 1000);
+function spinCategory(){
+  const keys = Object.keys(categories);
+  currentCategory = keys[Math.floor(Math.random()*keys.length)];
+  spinner.textContent = `📂 Category: ${currentCategory}`;
+  loadQuestion();
+  spinning = false;
 }
 
-function revealAnswer() {
-  clearInterval(answerTimer);
-
-  const correct = currentQuestion.a;
-
-  Object.keys(choices).forEach(k => {
-    if (k === correct) choices[k].classList.add("correct");
-  });
-
-  if (selectedChoice !== correct) {
-    document.body.classList.add("wrong");
-    lives--;
-  } else {
-    document.body.classList.add("correct");
-    score += 5;
-  }
-
-  updateHUD();
-
-  suspenseBox.textContent = "Revealing answer...";
-  suspenseTimer = setTimeout(() => {
-    suspenseBox.textContent = "";
-    resetChoices();
-    nextQuestion();
-  }, 5000);
-}
-
-function nextQuestion() {
-  if (lives <= 0) {
-    endGame("GAME OVER");
-    return;
-  }
-
-  const cats = Object.keys(availableQuestions).filter(
-    c => availableQuestions[c].length > 0
-  );
-
-  if (cats.length === 0) {
-    endGame("QUIZ COMPLETED!");
-    return;
-  }
-
-  const cat = cats[Math.floor(Math.random() * cats.length)];
-  const qIndex = Math.floor(Math.random() * availableQuestions[cat].length);
-  currentQuestion = availableQuestions[cat].splice(qIndex, 1)[0];
-
-  questionBox.textContent = `[${cat}] ${currentQuestion.q}`;
-  ["A", "B", "C", "D"].forEach((l, i) => {
+function loadQuestion(){
+  const list = categories[currentCategory];
+  currentQuestion = list[Math.floor(Math.random()*list.length)];
+  questionBox.textContent = currentQuestion.q;
+  ["A","B","C","D"].forEach((l,i)=>{
     choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
   });
-
   startAnswerTimer();
 }
 
-function endGame(text) {
-  questionBox.textContent = text;
-  suspenseBox.textContent = "Press A to Restart | Press B for Menu";
-  timerBox.textContent = "";
+/* ⏱️ 10s ANSWER TIMER */
+function startAnswerTimer(){
+  canAnswer = true;
+  let timeLeft = answerTime;
+  timerBox.textContent = `⏱️ Time left: ${timeLeft}s`;
+  answerInterval = setInterval(()=>{
+    timeLeft--;
+    timerBox.textContent = `⏱️ Time left: ${timeLeft}s`;
+    if(timeLeft<=0){
+      clearInterval(answerInterval);
+      canAnswer=false;
+      revealAnswer(null);
+    }
+  },1000);
 }
 
-function updateHUD() {
-  scoreBox.textContent = `Score: ${score}`;
-  livesBox.textContent = `Lives: ${lives}`;
+/* ⏳ 5s SUSPENSE + RESULT */
+function revealAnswer(selected){
+  resetChoices();
+  clearInterval(answerInterval);
+  let suspense = suspenseTime;
+  suspenseBox.textContent = `⏳ Revealing in ${suspense}s`;
+  suspenseInterval = setInterval(()=>{
+    suspense--;
+    suspenseBox.textContent = `⏳ Revealing in ${suspense}s`;
+    if(suspense<=0){
+      clearInterval(suspenseInterval);
+      suspenseBox.textContent = "";
+
+      if(selected===currentQuestion.a){
+        playerScore +=5;
+        document.body.style.transition="background 0.5s";
+        document.body.style.background="#14532d"; // green flash
+        choices[selected].classList.add("correct");
+      } else {
+        lives--;
+        document.body.style.transition="background 0.5s";
+        document.body.style.background="#7f1d1d"; // red flash
+        if(selected) choices[selected].classList.add("wrong");
+        choices[currentQuestion.a].classList.add("correct");
+      }
+
+      setTimeout(()=>{
+        document.body.style.background="#0f172a";
+        if(lives<=0){
+          gameOver();
+        } else {
+          spinning=true;
+          spinCategory();
+        }
+      },1000);
+    }
+  },1000);
 }
 
-/***********************
- * BUTTON INPUT (ESP32 / FIREBASE)
- ***********************/
-db.ref("game/control").on("value", snap => {
-  const val = snap.val();
-  if (!val || !val.button) return;
+/* 💀 GAME OVER */
+function gameOver(){
+  spinner.textContent="💀 Game Over!";
+  questionBox.textContent="Press C to restart, D to Main Menu";
+  resetChoices();
+  canAnswer=false;
 
-  handleButton(val.button);
+  // Push score to Firebase
+  const leaderboardRef = ref(db,"leaderboard");
+  push(leaderboardRef,{
+    score: playerScore,
+    timestamp: Date.now()
+  });
+}
 
-  db.ref("game/control").set({});
+/* 🔌 ESP32 BUTTON INPUT */
+onValue(controlRef, snapshot=>{
+  const data = snapshot.val();
+  if(!data || !data.button) return;
+  const btn = data.button;
+  set(controlRef,{button:""}); // reset
+
+  if(spinning){
+    spinCategory();
+    return;
+  }
+
+  if(!canAnswer && lives>0){
+    // Game over controls
+    if(btn==="C"){ // restart
+      lives=5; playerScore=0; spinning=true; spinCategory();
+    } else if(btn==="D"){ // back to menu
+      window.location.href="index.html";
+    }
+    return;
+  }
+
+  if(!canAnswer) return;
+
+  canAnswer=false;
+  choices[btn].classList.add("active");
+  revealAnswer(btn);
 });
 
-function handleButton(btn) {
-  if (!currentQuestion) return;
-
-  if (["A", "B", "C", "D"].includes(btn)) {
-    resetChoices();
-    selectedChoice = btn;
-    choices[btn].classList.add("selected");
-  }
-}
-
-/***********************
- * START GAME
- ***********************/
-updateHUD();
-nextQuestion();
+/* 🎉 START GAME */
+spinner.textContent="🎡 Press any button to start";
