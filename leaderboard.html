@@ -5,21 +5,43 @@
 <title>Leaderboard - Byte by Byte</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; padding:20px; }
+body {
+  font-family: Arial, sans-serif;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
 h1 { color:#fde047; }
-#scores { margin-top:20px; }
-.scoreItem { background:#1e293b; margin:10px auto; width:300px; padding:15px; border-radius:12px; font-size:1.2rem; }
+#scores {
+  margin-top:20px;
+  max-height:400px;
+  overflow:hidden;
+}
+.scoreItem {
+  background:#1e293b;
+  margin:10px auto;
+  width:300px;
+  padding:15px;
+  border-radius:12px;
+  font-size:1.2rem;
+  transition: background 0.3s;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
 .active { background:#fde047; color:black; }
+.icon { margin-right:10px; font-size:1.3rem; }
 </style>
 </head>
 <body>
 <h1>🏆 Leaderboard</h1>
 <div id="scores"></div>
-<p>Press D to return to Menu</p>
+<p>Use A/B to scroll, D to return to Menu</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
@@ -35,36 +57,60 @@ const firebaseConfig = {
 /* 🔌 INITIALIZE FIREBASE */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const leaderboardRef = ref(db, "leaderboard");
+const leaderboardRef = ref(db,"leaderboard");
+const controlRef = ref(db,"control");
 
 const scoresDiv = document.getElementById("scores");
+let entries = [];
+let currentIndex = 0;
+const visibleCount = 5; // show 5 scores at a time
 
-function updateLeaderboard(data){
-    const entries = [];
-    for(const id in data){
-        entries.push({score: data[id].score, timestamp: data[id].timestamp});
-    }
-    entries.sort((a,b)=>b.score - a.score || a.timestamp - b.timestamp); // higher score first, tie-breaker faster
-    scoresDiv.innerHTML = "";
-    entries.forEach((e,i)=>{
-        const div = document.createElement("div");
-        div.className="scoreItem";
-        div.textContent = `${i+1}. Score: ${e.score}`;
-        scoresDiv.appendChild(div);
-    });
+const medals = ["🥇","🥈","🥉"]; // top 3 icons
+
+function renderScores(){
+  scoresDiv.innerHTML = "";
+  const start = Math.max(0,currentIndex);
+  const end = Math.min(entries.length, start+visibleCount);
+  for(let i=start;i<end;i++){
+    const div = document.createElement("div");
+    div.className="scoreItem";
+    if(i===currentIndex) div.classList.add("active");
+
+    const icon = i<3 ? `<span class="icon">${medals[i]}</span>` : '';
+    div.innerHTML=`${icon}<span>Score: ${entries[i].score}</span>`;
+    scoresDiv.appendChild(div);
+  }
 }
 
-onValue(leaderboardRef, snapshot => {
-    const data = snapshot.val() || {};
-    updateLeaderboard(data);
+onValue(leaderboardRef, snapshot=>{
+  const data = snapshot.val() || {};
+  entries = [];
+  for(const id in data){
+    entries.push({score:data[id].score, timestamp:data[id].timestamp});
+  }
+  // Sort: high score first, tie-breaker by earliest timestamp
+  entries.sort((a,b)=>b.score - a.score || a.timestamp - b.timestamp);
+  currentIndex=0;
+  renderScores();
 });
 
-/* 🔌 ESP32 Back button */
-import { getDatabase, ref as dbRef, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-const controlRef = ref(db,"control");
+/* 🔌 ESP32 BUTTON CONTROLS */
 onValue(controlRef, snapshot=>{
-    const btn = snapshot.val()?.button;
-    if(btn==="D") window.location.href="index.html";
+  const btn = snapshot.val()?.button;
+  if(!btn) return;
+  set(controlRef,{button:""}); // reset
+
+  if(btn==="A"){ // move up
+    if(entries.length===0) return;
+    currentIndex=Math.max(0,currentIndex-1);
+    renderScores();
+  } else if(btn==="B"){ // move down
+    if(entries.length===0) return;
+    currentIndex=Math.min(entries.length-1,currentIndex+1);
+    renderScores();
+  } else if(btn==="D"){ // back to menu
+    window.location.href="index.html";
+  }
 });
 </script>
 </body>
