@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Byte by Byte: IT Quiz Challenge</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -14,9 +13,7 @@ body {
   padding: 20px;
   transition: background 0.5s;
 }
-
 h1 { margin-bottom: 5px; }
-
 #spinner, #timer, #suspense {
   margin: 15px auto;
   font-size: 1.5rem;
@@ -25,53 +22,24 @@ h1 { margin-bottom: 5px; }
   background: #1e293b;
   border-radius: 12px;
 }
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-#question {
-  margin-top: 20px;
-  font-size: 1.4rem;
-}
-
-.choices {
-  display: grid;
-  grid-template-columns: repeat(2, 160px);
-  gap: 15px;
-  justify-content: center;
-  margin-top: 25px;
-}
-
-.choice {
-  padding: 18px;
-  border-radius: 12px;
-  background: #334155;
-  font-size: 1.2rem;
-}
-
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+#question { margin-top: 20px; font-size: 1.4rem; }
+.choices { display: grid; grid-template-columns: repeat(2, 160px); gap: 15px; justify-content: center; margin-top: 25px; }
+.choice { padding: 18px; border-radius: 12px; background: #334155; font-size: 1.2rem; cursor: pointer; }
 .active { background: #fde047; color: black; }
 .correct { background: #22c55e; }
 .wrong { background: #ef4444; }
 </style>
 </head>
-
 <body>
-
 <h1>🕹️ Byte by Byte</h1>
 <h2>IT Quiz Challenge</h2>
 
 <div id="spinner">🎡 Press any button to spin</div>
 <div id="timer"></div>
 <div id="suspense"></div>
-
 <div id="question"></div>
-
 <div class="choices">
   <div id="A" class="choice">A</div>
   <div id="B" class="choice">B</div>
