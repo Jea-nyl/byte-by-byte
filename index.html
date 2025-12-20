@@ -5,11 +5,9 @@
 <title>Byte by Byte: IT Quiz Challenge</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-/* ===== GLOBAL STYLES ===== */
 body {
   font-family: 'Roboto', sans-serif;
   background: linear-gradient(to right, #0f172a, #1e293b);
@@ -19,48 +17,34 @@ body {
   padding: 20px;
   transition: background 0.5s;
 }
+h1 { font-size: 2.8rem; margin-bottom: 5px; color: #fcd34d; text-shadow: 2px 2px 5px #000000aa; }
+h2 { font-size: 1.6rem; margin-top: 0; color: #a5b4fc; text-shadow: 1px 1px 3px #000000aa; }
 
-h1 {
-  font-size: 2.8rem;
-  margin-bottom: 5px;
-  color: #fcd34d;
-  text-shadow: 2px 2px 5px #000000aa;
-}
-
-h2 {
-  font-size: 1.6rem;
-  margin-top: 0;
-  color: #a5b4fc;
-  text-shadow: 1px 1px 3px #000000aa;
-}
-
-/* ===== SPINNER / TIMER / SUSPENSE ===== */
-#spinner, #timer, #suspense {
+/* COMMON BOX STYLES */
+.box {
   margin: 15px auto;
-  font-size: 1.5rem;
   padding: 18px;
   width: 340px;
   max-width: 90%;
-  background: #334155;
   border-radius: 16px;
   box-shadow: 0 5px 15px #00000088;
   transition: background 0.3s, transform 0.3s;
+  display: none; /* hidden by default */
 }
 
-/* ===== QUESTION BOX ===== */
-#question {
-  margin: 25px auto;
-  font-size: 1.5rem;
-  padding: 25px;
-  width: 90%;
-  max-width: 600px;
-  background: #1e293b;
-  border-radius: 20px;
-  box-shadow: 0 5px 20px #00000099;
-  transition: transform 0.3s;
+/* MENU BOX */
+#menuContent {
+  display: block; /* initially visible */
+  font-size: 1.4rem;
+  background: #334155;
+  text-align: left;
 }
 
-/* ===== CHOICES ===== */
+/* SPINNER / TIMER / SUSPENSE / QUESTION */
+#spinner, #timer, #suspense, #question { background: #475569; font-size: 1.3rem; }
+#question { font-size: 1.5rem; padding: 25px; background: #1e293b; max-width:600px; }
+
+/* CHOICES */
 .choices {
   display: grid;
   grid-template-columns: repeat(2, 160px);
@@ -78,19 +62,13 @@ h2 {
   transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
   box-shadow: 0 5px 15px #00000077;
 }
+.choice:hover { transform: translateY(-5px); background: #6366f1; color:white; }
 
-.choice:hover {
-  transform: translateY(-5px);
-  background: #6366f1;
-  color: white;
-  box-shadow: 0 8px 20px #000000aa;
-}
+.active { background: #fde047; color:black; }
+.correct { background: #22c55e; color:white; }
+.wrong { background: #ef4444; color:white; }
 
-.active { background: #fde047; color: black; }
-.correct { background: #22c55e; color: white; }
-.wrong { background: #ef4444; color: white; }
-
-/* ===== SCORE & LIVES ===== */
+/* SCORE & LIVES */
 #scoreLives {
   font-size: 1.3rem;
   margin-top: 25px;
@@ -99,19 +77,28 @@ h2 {
   padding: 12px 25px;
   border-radius: 16px;
   box-shadow: 0 4px 12px #00000077;
+  display: none; /* hidden until game starts */
 }
 
-/* ===== FLASH ANIMATIONS ===== */
-.correct-flash { animation: flashGreen 0.5s ease-in-out 2; }
-.wrong-flash { animation: flashRed 0.5s ease-in-out 2; }
+/* Flash animations */
+.correct-flash { animation: flashGreen 1s ease-in-out 1 forwards; }
+.wrong-flash { animation: flashRed 1s ease-in-out 1 forwards; }
 
-@keyframes flashGreen { 0%,100%{background-color:#0f172a;}50%{background-color:#14532d;} }
-@keyframes flashRed { 0%,100%{background-color:#0f172a;}50%{background-color:#7f1d1d;} }
+@keyframes flashGreen {
+  0% { background: linear-gradient(to right,#0f172a,#1e293b);}
+  50% { background: #14532d; }
+  100% { background: linear-gradient(to right,#0f172a,#1e293b);}
+}
+@keyframes flashRed {
+  0% { background: linear-gradient(to right,#0f172a,#1e293b);}
+  50% { background: #7f1d1d; }
+  100% { background: linear-gradient(to right,#0f172a,#1e293b);}
+}
 
-/* ===== RESPONSIVE ===== */
-@media screen and (max-width: 400px) {
+/* RESPONSIVE */
+@media screen and (max-width:400px){
   .choices { grid-template-columns: 1fr; gap: 15px; }
-  #spinner, #timer, #suspense, #question { width: 95%; }
+  #menuContent, #spinner, #timer, #suspense, #question { width: 95%; }
 }
 </style>
 </head>
@@ -120,15 +107,23 @@ h2 {
 <h1>🕹️ Byte by Byte</h1>
 <h2>IT Quiz Challenge</h2>
 
+<!-- MAIN MENU -->
+<div id="menuContent" class="box">
+  <p>A → Start</p>
+  <p>B → Settings</p>
+  <p>C → Leaderboard</p>
+  <p>D → Introduction</p>
+</div>
+
 <!-- CATEGORY SPINNER -->
-<div id="spinner">🎡 Press A button to Start</div>
+<div id="spinner" class="box"></div>
 
 <!-- TIMERS -->
-<div id="timer"></div>
-<div id="suspense"></div>
+<div id="timer" class="box"></div>
+<div id="suspense" class="box"></div>
 
 <!-- QUESTION BOX -->
-<div id="question">Press A button to start the game!</div>
+<div id="question" class="box"></div>
 
 <!-- CHOICES -->
 <div class="choices">
@@ -141,7 +136,6 @@ h2 {
 <!-- SCORE & LIVES -->
 <div id="scoreLives">⭐ Score: 0 | ❤️ Lives: 5</div>
 
-<!-- Main JS -->
 <script type="module" src="main.js"></script>
 </body>
 </html>
