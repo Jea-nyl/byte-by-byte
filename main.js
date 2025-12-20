@@ -117,9 +117,7 @@ function startAnswerTimer() {
 
 /* ⏳ 5-SECOND SUSPENSE + RESULT */
 function revealAnswer(selected) {
-  resetChoices();
   clearInterval(answerInterval);
-
   suspenseTime = 5;
   suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
 
@@ -136,22 +134,25 @@ function revealAnswer(selected) {
       if (selected === currentQuestion.a) {
         result = "correct";
         score += 5;
-        document.body.style.background = "#14532d"; // green
+        document.body.style.background = "#14532d"; // green flash
         choices[selected]?.classList.add("correct");
       } else {
         lives--;
-        document.body.style.background = "#7f1d1d"; // red
-        choices[currentQuestion.a].classList.add("correct");
-        if (selected) choices[selected].classList.add("wrong");
+        document.body.style.background = "#7f1d1d"; // red flash
+        choices[currentQuestion.a]?.classList.add("correct");
+        if (selected) choices[selected]?.classList.add("wrong");
       }
 
       updateHUD();
 
-      // 🔌 SEND RESULT TO ESP32
+      // 🔌 Send result to ESP32
       set(controlRef, { result });
 
       setTimeout(() => {
         document.body.style.background = "#0f172a";
+
+        // 🔹 Remove highlights before next question
+        resetChoices();
 
         if (lives <= 0) {
           questionBox.textContent = "💀 GAME OVER";
