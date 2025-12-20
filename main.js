@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
@@ -12,12 +12,13 @@ const firebaseConfig = {
   appId: "1:838552047744:web:f653b9fba96e49aa44d665"
 };
 
-/* 🔌 INITIALIZE FIREBASE */
+/* 🔌 INIT */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const controlRef = ref(db,"control");
+const controlRef = ref(db, "control");
+const leaderboardRef = ref(db, "leaderboard");
 
-/* 🎮 UI ELEMENTS */
+/* 🎮 UI */
 const spinner = document.getElementById("spinner");
 const timerBox = document.getElementById("timer");
 const suspenseBox = document.getElementById("suspense");
@@ -31,150 +32,192 @@ const choices = {
   D: document.getElementById("D")
 };
 
-/* 🎲 GAME DATA */
-const categories = {
-  Programming: [
-    { q:"HTML stands for?", c:["Hyper Text Markup Language","High Tech Machine Language","Home Tool Markup Language","Hyperlinks Text Machine"], a:"A" },
-    { q:"CSS stands for?", c:["Creative Style Sheets","Cascading Style Sheets","Computer Style Sheet","Colorful Style Sheets"], a:"B" },
-    { q:"JS is used for?", c:["Styling pages","Adding interactivity","Database","Networking"], a:"B" },
-    { q:"Which is frontend?", c:["React","Node.js","MongoDB","Python"], a:"A" },
-    { q:"Which is backend?", c:["React","HTML","Node.js","CSS"], a:"C" }
+/* 📚 QUESTIONS (50 TOTAL) */
+const questionBank = {
+  DATABASE: [
+    { q:"What does SQL stand for?", c:["Structured Query Language","System Query Logic","Simple Query List","Sequential Query Line"], correct:"Structured Query Language" },
+    { q:"Which command retrieves data?", c:["INSERT","DELETE","SELECT","UPDATE"], correct:"SELECT" },
+    { q:"Primary key is used to?", c:["Format tables","Delete rows","Identify records","Encrypt data"], correct:"Identify records" },
+    { q:"Which is a DBMS?", c:["MySQL","HTML","CSS","Python"], correct:"MySQL" },
+    { q:"Which stores tables?", c:["Relational DB","Text file","Image","Cache"], correct:"Relational DB" },
+    { q:"Which key links tables?", c:["Foreign key","Primary key","Index","Trigger"], correct:"Foreign key" },
+    { q:"Which is NoSQL?", c:["MongoDB","MySQL","Oracle","PostgreSQL"], correct:"MongoDB" },
+    { q:"Which command adds data?", c:["SELECT","INSERT","DROP","WHERE"], correct:"INSERT" },
+    { q:"Which deletes data?", c:["REMOVE","DELETE","CLEAR","DROP"], correct:"DELETE" },
+    { q:"Which updates data?", c:["CHANGE","MODIFY","UPDATE","SET"], correct:"UPDATE" }
   ],
-  Networking: [
-    { q:"Device connecting networks?", c:["Router","RAM","CPU","SSD"], a:"A" },
-    { q:"IP stands for?", c:["Internet Protocol","Internal Process","Interface Program","Internet Page"], a:"A" },
-    { q:"TCP is?", c:["Transmission Control Protocol","Text Control Program","Terminal Communication Process","Transfer Connection Protocol"], a:"A" },
-    { q:"LAN means?", c:["Large Area Network","Local Area Network","Long Access Network","Local Application Network"], a:"B" },
-    { q:"DNS translates?", c:["IP to Name","Name to IP","Both","None"], a:"C" }
+
+  NETWORKING: [
+    { q:"What does IP stand for?", c:["Internet Protocol","Internal Process","Interface Program","Internet Path"], correct:"Internet Protocol" },
+    { q:"Which connects networks?", c:["Hub","Switch","Router","Repeater"], correct:"Router" },
+    { q:"LAN means?", c:["Local Area Network","Large Area Network","Linked Access Node","Logical Area Net"], correct:"Local Area Network" },
+    { q:"Which cable is Ethernet?", c:["HDMI","UTP","VGA","USB"], correct:"UTP" },
+    { q:"DNS converts?", c:["IP to name","Name to IP","Both","None"], correct:"Both" },
+    { q:"Which protocol browses web?", c:["FTP","SMTP","HTTP","SNMP"], correct:"HTTP" },
+    { q:"Which is wireless?", c:["Fiber","Ethernet","Wi-Fi","UTP"], correct:"Wi-Fi" },
+    { q:"Which device boosts signal?", c:["Router","Repeater","Modem","Switch"], correct:"Repeater" },
+    { q:"What does TCP mean?", c:["Transmission Control Protocol","Transfer Core Process","Text Communication Program","Terminal Control Path"], correct:"Transmission Control Protocol" },
+    { q:"Which is private IP?", c:["192.168.1.1","8.8.8.8","1.1.1.1","172.217.3.4"], correct:"192.168.1.1" }
+  ],
+
+  HARDWARE: [
+    { q:"Brain of computer?", c:["RAM","CPU","SSD","GPU"], correct:"CPU" },
+    { q:"Permanent storage?", c:["RAM","Cache","SSD","Register"], correct:"SSD" },
+    { q:"Displays output?", c:["Monitor","Keyboard","Mouse","Speaker"], correct:"Monitor" },
+    { q:"Supplies power?", c:["PSU","CPU","RAM","Motherboard"], correct:"PSU" },
+    { q:"Inputs text?", c:["Mouse","Keyboard","Scanner","Monitor"], correct:"Keyboard" },
+    { q:"Temporary memory?", c:["SSD","HDD","RAM","ROM"], correct:"RAM" },
+    { q:"Processes graphics?", c:["GPU","CPU","PSU","NIC"], correct:"GPU" },
+    { q:"Connects components?", c:["Motherboard","SSD","Monitor","PSU"], correct:"Motherboard" },
+    { q:"Stores firmware?", c:["RAM","ROM","Cache","SSD"], correct:"ROM" },
+    { q:"Outputs sound?", c:["Speaker","Mouse","Scanner","Camera"], correct:"Speaker" }
+  ],
+
+  SOFTWARE: [
+    { q:"Example of OS?", c:["Windows","Excel","Chrome","Word"], correct:"Windows" },
+    { q:"Protects from virus?", c:["Firewall","Antivirus","Compiler","Browser"], correct:"Antivirus" },
+    { q:"Open source OS?", c:["Linux","Windows","macOS","DOS"], correct:"Linux" },
+    { q:"Used for documents?", c:["System","Utility","Application","Firmware"], correct:"Application" },
+    { q:"Controls hardware?", c:["Browser","OS","Editor","Player"], correct:"OS" },
+    { q:"Web browser?", c:["Chrome","Linux","Windows","Android"], correct:"Chrome" },
+    { q:"Utility software?", c:["Disk cleanup","Excel","Photoshop","Chrome"], correct:"Disk cleanup" },
+    { q:"Mobile OS?", c:["Android","Python","Java","Node"], correct:"Android" },
+    { q:"Office software?", c:["Word","Linux","BIOS","Driver"], correct:"Word" },
+    { q:"Media player?", c:["VLC","MySQL","Git","Node"], correct:"VLC" }
+  ],
+
+  PEOPLE: [
+    { q:"Father of computers?", c:["Charles Babbage","Bill Gates","Steve Jobs","Turing"], correct:"Charles Babbage" },
+    { q:"Founded Microsoft?", c:["Bill Gates","Jobs","Zuckerberg","Musk"], correct:"Bill Gates" },
+    { q:"Founded Apple?", c:["Steve Jobs","Gates","Bezos","Musk"], correct:"Steve Jobs" },
+    { q:"Created Linux?", c:["Torvalds","Gates","Jobs","Ritchie"], correct:"Linus Torvalds" },
+    { q:"Invented WWW?", c:["Berners-Lee","Turing","Ritchie","Knuth"], correct:"Tim Berners-Lee" },
+    { q:"CEO of Tesla?", c:["Musk","Jobs","Bezos","Page"], correct:"Elon Musk" },
+    { q:"Founder of Facebook?", c:["Zuckerberg","Gates","Jobs","Dorsey"], correct:"Mark Zuckerberg" },
+    { q:"Creator of C language?", c:["Dennis Ritchie","Babbage","Turing","Linus"], correct:"Dennis Ritchie" },
+    { q:"Google founder?", c:["Larry Page","Jobs","Bezos","Musk"], correct:"Larry Page" },
+    { q:"Amazon founder?", c:["Jeff Bezos","Gates","Page","Cook"], correct:"Jeff Bezos" }
   ]
 };
 
 /* 🎯 GAME STATE */
-let gameState="menu"; // menu / playing / gameover
-let currentCategory="";
-let currentQuestion=null;
-let canAnswer=false;
-let score=0;
-let lives=5;
-let answerTime = parseInt(localStorage.getItem("answerTime"))||10;
-let revealTime = parseInt(localStorage.getItem("revealTime"))||5;
+let gameState = "menu";
+let usedQuestions = [];
+let currentQuestion = null;
+let canAnswer = false;
+let score = 0;
+let lives = 5;
 let answerInterval, suspenseInterval;
 
-/* 🧹 HELPERS */
-function resetChoices(){ Object.values(choices).forEach(c=>c.className="choice"); }
-function updateScoreLives(){ scoreLivesBox.textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`; }
+/* 🧠 HELPERS */
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
 
-/* 🎡 RANDOM CATEGORY */
-function selectRandomCategory(){
-  const keys = Object.keys(categories);
-  currentCategory = keys[Math.floor(Math.random()*keys.length)];
-  spinner.textContent=`📂 Category: ${currentCategory}`;
-  loadQuestion();
+function getNextQuestion(){
+  const all = [];
+  Object.values(questionBank).forEach(cat=>cat.forEach(q=>all.push(q)));
+  const remaining = all.filter(q=>!usedQuestions.includes(q));
+  if(remaining.length===0) return null;
+  const q = remaining[Math.floor(Math.random()*remaining.length)];
+  usedQuestions.push(q);
+  return q;
 }
 
 /* ❓ LOAD QUESTION */
 function loadQuestion(){
-  const list = categories[currentCategory];
-  currentQuestion = list[Math.floor(Math.random()*list.length)];
-  questionBox.textContent=currentQuestion.q;
-  ["A","B","C","D"].forEach((l,i)=> choices[l].textContent=`${l}. ${currentQuestion.c[i]}`);
-  startAnswerTimer();
+  currentQuestion = getNextQuestion();
+  if(!currentQuestion){ gameOver(); return; }
+
+  spinner.textContent = "📂 Random Category";
+  questionBox.textContent = currentQuestion.q;
+
+  const shuffled = shuffle([...currentQuestion.c]);
+  ["A","B","C","D"].forEach((l,i)=>{
+    choices[l].textContent = `${l}. ${shuffled[i]}`;
+    choices[l].dataset.answer = shuffled[i];
+  });
+
+  startTimer();
 }
 
-/* ⏱️ ANSWER TIMER */
-function startAnswerTimer(){
-  canAnswer=true;
-  let time=answerTime;
-  timerBox.textContent=`⏱️ Time left: ${time}s`;
-  answerInterval=setInterval(()=>{
-    time--;
-    timerBox.textContent=`⏱️ Time left: ${time}s`;
-    if(time<=0){
+/* ⏱ TIMER */
+function startTimer(){
+  canAnswer = true;
+  let t = 10;
+  timerBox.textContent = `⏱️ ${t}s`;
+  answerInterval = setInterval(()=>{
+    t--;
+    timerBox.textContent = `⏱️ ${t}s`;
+    if(t<=0){
       clearInterval(answerInterval);
       canAnswer=false;
-      revealAnswer(null);
+      reveal(null);
     }
   },1000);
 }
 
-/* ⏳ REVEAL ANSWER */
-function revealAnswer(selected){
-  resetChoices();
+/* ✅ CHECK */
+function reveal(selected){
   clearInterval(answerInterval);
-  let suspense=revealTime;
-  suspenseBox.textContent=`⏳ Revealing in ${suspense}s`;
-
+  let s=3;
+  suspenseBox.textContent=`⏳ ${s}`;
   suspenseInterval=setInterval(()=>{
-    suspense--;
-    suspenseBox.textContent=`⏳ Revealing in ${suspense}s`;
-    if(suspense<=0){
+    s--;
+    suspenseBox.textContent=`⏳ ${s}`;
+    if(s<=0){
       clearInterval(suspenseInterval);
       suspenseBox.textContent="";
-      if(selected===currentQuestion.a){
-        document.body.classList.add("correct-flash");
+      if(selected && choices[selected].dataset.answer===currentQuestion.correct){
         score+=5;
-        choices[selected]?.classList.add("correct");
-      } else {
-        document.body.classList.add("wrong-flash");
+        choices[selected].classList.add("correct");
+      }else{
         lives--;
-        choices[currentQuestion.a]?.classList.add("correct");
-        if(selected) choices[selected]?.classList.add("wrong");
+        Object.values(choices).forEach(c=>{
+          if(c.dataset.answer===currentQuestion.correct) c.classList.add("correct");
+        });
       }
-      updateScoreLives();
-      setTimeout(()=>{
-        document.body.className="";
-        resetChoices();
-        if(lives<=0){
-          gameOver();
-        } else {
-          selectRandomCategory();
-        }
-      },1500);
+      scoreLivesBox.textContent=`⭐ ${score} | ❤️ ${lives}`;
+      setTimeout(()=>{ reset(); loadQuestion(); },1200);
     }
   },1000);
 }
 
-/* 💀 GAME OVER */
-function gameOver(){
-  gameState="gameover";
-  spinner.textContent="💀 Game Over";
-  questionBox.textContent="Press A to Restart\nPress B to go to Main Menu";
-  timerBox.style.display="none";
-  suspenseBox.style.display="none";
-  Object.values(choices).forEach(c=>c.style.display="none");
+function reset(){
+  Object.values(choices).forEach(c=>c.className="choice");
 }
 
-/* 🔌 ESP32 BUTTON INPUT */
-onValue(controlRef, snapshot=>{
-  const data=snapshot.val();
-  if(!data||!data.button) return;
-  const btn=data.button;
-  set(controlRef,{button:""}); // reset
+/* 💀 GAME OVER + SAVE SCORE */
+function gameOver(){
+  gameState="gameover";
+  spinner.textContent="💀 GAME OVER";
+  questionBox.textContent=`Final Score: ${score}`;
+  push(leaderboardRef, {
+    score,
+    date: new Date().toISOString()
+  });
+}
 
+/* 🔘 ESP32 INPUT */
+onValue(controlRef, snap=>{
+  const d=snap.val();
+  if(!d||!d.button) return;
+  const btn=d.button;
+  set(controlRef,{button:""});
   if(gameState==="menu"){
-    if(btn==="A"){ // Start game
-      gameState="playing";
-      score=0; lives=5;
-      updateScoreLives();
-      Object.values(choices).forEach(c=>c.style.display="block");
-      spinner.style.display="block"; timerBox.style.display="block"; suspenseBox.style.display="block"; questionBox.style.display="block"; scoreLivesBox.style.display="inline-block";
-      selectRandomCategory();
-    }
-    if(btn==="B"){ location.href='settings.html'; }
-    if(btn==="C"){ location.href='leaderboard.html'; }
-    if(btn==="D"){ location.href='introduction.html'; }
+    gameState="playing";
+    usedQuestions=[];
+    score=0; lives=5;
+    scoreLivesBox.textContent=`⭐ 0 | ❤️ 5`;
+    loadQuestion();
     return;
   }
-
-  if(gameState==="playing"){
-    if(!canAnswer) return;
+  if(gameState==="playing" && canAnswer){
     canAnswer=false;
-    choices[btn]?.classList.add("active");
-    revealAnswer(btn);
-  }
-
-  if(gameState==="gameover"){
-    if(btn==="A"){ location.reload(); } // restart
-    if(btn==="B"){ location.href='index.html'; }
+    reveal(btn);
   }
 });
