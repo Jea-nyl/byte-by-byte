@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔥 FIREBASE CONFIG */
+/* 🔥 YOUR FIREBASE CONFIG (INSERTED) */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
@@ -12,12 +12,15 @@ const firebaseConfig = {
   appId: "1:838552047744:web:f653b9fba96e49aa44d665"
 };
 
+/* 🔌 INITIALIZE FIREBASE */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const controlRef = ref(db, "control");
 
 /* 🎮 UI ELEMENTS */
 const spinner = document.getElementById("spinner");
+const timerBox = document.getElementById("timer");
+const suspenseBox = document.getElementById("suspense");
 const questionBox = document.getElementById("question");
 
 const choices = {
@@ -30,38 +33,45 @@ const choices = {
 /* 📚 QUESTIONS */
 const categories = {
   Programming: [
-    { q: "What does HTML stand for?", c: ["Hyper Text Markup Language", "High Tech Machine Language", "Home Tool Markup Language", "Hyperlinks Text Machine"], a: "A" },
-    { q: "Which is a programming language?", c: ["HTTP", "HTML", "Python", "CSS"], a: "C" },
-    { q: "Which symbol is used for comments in JS?", c: ["//", "##", "<!--", "**"], a: "A" },
-    { q: "What does CSS style?", c: ["Logic", "Database", "Design", "Server"], a: "C" },
-    { q: "Which is not a loop?", c: ["for", "while", "if", "do-while"], a: "C" }
+    {
+      q: "HTML stands for?",
+      c: [
+        "Hyper Text Markup Language",
+        "High Tech Machine Language",
+        "Home Tool Markup Language",
+        "Hyperlinks Text Machine"
+      ],
+      a: "A"
+    }
   ],
-
   Networking: [
-    { q: "What device connects networks?", c: ["Router", "RAM", "CPU", "SSD"], a: "A" },
-    { q: "IP stands for?", c: ["Internet Protocol", "Internal Process", "Input Port", "Internet Provider"], a: "A" },
-    { q: "LAN means?", c: ["Large Area Network", "Local Area Network", "Logical Access Node", "Low Area Network"], a: "B" },
-    { q: "Which uses WiFi?", c: ["Ethernet", "Bluetooth", "Wireless", "Fiber"], a: "C" },
-    { q: "Which layer is IP?", c: ["Physical", "Transport", "Network", "Application"], a: "C" }
+    {
+      q: "What device connects networks?",
+      c: ["Router", "RAM", "CPU", "SSD"],
+      a: "A"
+    }
   ]
 };
 
-/* 🎡 GAME STATE */
+/* 🎯 GAME STATE */
+let spinning = true;
 let currentCategory = "";
 let currentQuestion = null;
-let spinning = true;
+let canAnswer = false;
 
-/* 🔄 RESET UI */
+let answerTime = 10;
+let suspenseTime = 5;
+let answerInterval, suspenseInterval;
+
+/* 🧹 HELPERS */
 function resetChoices() {
-  Object.values(choices).forEach(c => {
-    c.className = "choice";
-    c.textContent = c.id;
-  });
+  Object.values(choices).forEach(c => c.className = "choice");
 }
 
 /* 🎡 SPIN CATEGORY */
 function spinCategory() {
   spinner.classList.add("spin");
+  spinner.textContent = "🎡 Spinning...";
 
   const keys = Object.keys(categories);
   currentCategory = keys[Math.floor(Math.random() * keys.length)];
@@ -84,9 +94,63 @@ function loadQuestion() {
   ["A","B","C","D"].forEach((l, i) => {
     choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
   });
+
+  startAnswerTimer();
 }
 
-/* 🎯 BUTTON INPUT */
+/* ⏱️ 10-SECOND ANSWER TIMER */
+function startAnswerTimer() {
+  canAnswer = true;
+  answerTime = 10;
+  timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
+
+  answerInterval = setInterval(() => {
+    answerTime--;
+    timerBox.textContent = `⏱️ Time left: ${answerTime}s`;
+
+    if (answerTime <= 0) {
+      clearInterval(answerInterval);
+      canAnswer = false;
+      revealAnswer(null);
+    }
+  }, 1000);
+}
+
+/* ⏳ 5-SECOND SUSPENSE + RESULT */
+function revealAnswer(selected) {
+  resetChoices();
+  clearInterval(answerInterval);
+
+  suspenseTime = 5;
+  suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
+
+  suspenseInterval = setInterval(() => {
+    suspenseTime--;
+    suspenseBox.textContent = `⏳ Revealing in ${suspenseTime}s`;
+
+    if (suspenseTime <= 0) {
+      clearInterval(suspenseInterval);
+      suspenseBox.textContent = "";
+
+      if (selected === currentQuestion.a) {
+        document.body.style.background = "#14532d";
+        choices[selected]?.classList.add("correct");
+      } else {
+        document.body.style.background = "#7f1d1d";
+        choices[currentQuestion.a].classList.add("correct");
+        if (selected) choices[selected].classList.add("wrong");
+      }
+
+      setTimeout(() => {
+        document.body.style.background = "#0f172a";
+        spinning = true;
+        spinCategory();
+      }, 2000);
+    }
+  }, 1000);
+}
+
+/* 🎯 ESP32 BUTTON INPUT */
 onValue(controlRef, snapshot => {
   const data = snapshot.val();
   if (!data || !data.button) return;
@@ -99,15 +163,9 @@ onValue(controlRef, snapshot => {
     return;
   }
 
-  resetChoices();
-  choices[btn].classList.add("active");
+  if (!canAnswer) return;
 
-  setTimeout(() => {
-    if (btn === currentQuestion.a) {
-      choices[btn].classList.add("correct");
-    } else {
-      choices[btn].classList.add("wrong");
-      choices[currentQuestion.a].classList.add("correct");
-    }
-  }, 800);
+  canAnswer = false;
+  choices[btn].classList.add("active");
+  revealAnswer(btn);
 });
