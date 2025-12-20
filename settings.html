@@ -6,29 +6,68 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body{background:#0f172a;color:white;text-align:center;font-family:Arial,sans-serif;padding:20px;}
-h1{color:#fde047;}
-input{padding:8px;margin:10px;width:80px;}
-button{padding:10px 20px;margin-top:20px;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;}
-button:hover{background:#475569;}
+h1{color:#fde047;margin-bottom:30px;}
+.timer-display{margin:15px;font-size:1.5rem;}
 </style>
 </head>
 <body>
 <h1>Settings</h1>
-<p>Answer Timer (seconds)</p>
-<input type="number" id="answerTime" value="10">
-<p>Reveal Timer (seconds)</p>
-<input type="number" id="revealTime" value="5">
-<br>
-<button onclick="saveSettings()">Save & Back to Menu</button>
 
-<script>
-function saveSettings(){
-  const answer = document.getElementById('answerTime').value;
-  const reveal = document.getElementById('revealTime').value;
-  localStorage.setItem('answerTime',answer);
-  localStorage.setItem('revealTime',reveal);
-  location.href='index.html';
-}
+<div class="timer-display">Answer Timer: <span id="answerTime">10</span>s</div>
+<div class="timer-display">Reveal Timer: <span id="revealTime">5</span>s</div>
+<p>Use buttons to adjust: A/B for Answer, C/D for Reveal</p>
+<p>Press A + B together to Save & Back to Menu</p>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
+  authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
+  databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
+  projectId: "byte-by-byte-f7a4c",
+  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  messagingSenderId: "838552047744",
+  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const controlRef = ref(db,"control");
+
+let answerTime = parseInt(localStorage.getItem('answerTime')) || 10;
+let revealTime = parseInt(localStorage.getItem('revealTime')) || 5;
+
+const answerSpan = document.getElementById('answerTime');
+const revealSpan = document.getElementById('revealTime');
+answerSpan.textContent = answerTime;
+revealSpan.textContent = revealTime;
+
+/* Detect ESP32 button presses */
+onValue(controlRef, snapshot=>{
+  const data = snapshot.val();
+  if(!data||!data.button) return;
+  const btn = data.button;
+  set(controlRef,{button:""}); // reset
+
+  if(btn==="A") answerTime++;
+  if(btn==="B") answerTime = Math.max(1, answerTime-1);
+  if(btn==="C") revealTime++;
+  if(btn==="D") revealTime = Math.max(1, revealTime-1);
+
+  answerSpan.textContent=answerTime;
+  revealSpan.textContent=revealTime;
+});
+
+/* Save values if user presses A+B together */
+document.addEventListener('keydown',e=>{
+  if(e.key==='a' && e.key==='b'){
+    localStorage.setItem('answerTime',answerTime);
+    localStorage.setItem('revealTime',revealTime);
+    location.href='index.html';
+  }
+});
 </script>
 </body>
 </html>
