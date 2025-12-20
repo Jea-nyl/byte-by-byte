@@ -4,48 +4,147 @@
 <meta charset="UTF-8">
 <title>Byte by Byte: IT Quiz Challenge</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
+/* ===== GLOBAL STYLES ===== */
 body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(to right, #0f172a, #1e293b);
   color: white;
   text-align: center;
+  margin: 0;
   padding: 20px;
   transition: background 0.5s;
 }
-h1 { margin-bottom: 5px; }
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 5px;
+  color: #fcd34d;
+  text-shadow: 1px 1px 3px #000000aa;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  color: #a5b4fc;
+  text-shadow: 1px 1px 3px #000000aa;
+}
+
+/* ===== SPINNER / TIMER / SUSPENSE ===== */
 #spinner, #timer, #suspense {
   margin: 15px auto;
-  font-size: 1.5rem;
-  padding: 15px;
-  width: 320px;
-  background: #1e293b;
-  border-radius: 12px;
+  font-size: 1.4rem;
+  padding: 18px;
+  width: 340px;
+  max-width: 90%;
+  background: #334155;
+  border-radius: 16px;
+  box-shadow: 0 5px 15px #00000088;
+  transition: background 0.3s, transform 0.3s;
 }
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-#question { margin-top: 20px; font-size: 1.4rem; }
-.choices { display: grid; grid-template-columns: repeat(2, 160px); gap: 15px; justify-content: center; margin-top: 25px; }
-.choice { padding: 18px; border-radius: 12px; background: #334155; font-size: 1.2rem; cursor: pointer; }
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+/* ===== QUESTION BOX ===== */
+#question {
+  margin: 25px auto;
+  font-size: 1.5rem;
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  background: #1e293b;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px #00000099;
+}
+
+/* ===== CHOICES ===== */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, 160px);
+  gap: 20px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.choice {
+  padding: 20px;
+  border-radius: 16px;
+  background: #475569;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.3s;
+  box-shadow: 0 5px 15px #00000077;
+}
+
+.choice:hover {
+  transform: translateY(-5px);
+  background: #6366f1;
+  color: white;
+}
+
 .active { background: #fde047; color: black; }
-.correct { background: #22c55e; }
-.wrong { background: #ef4444; }
+.correct { background: #22c55e; color: white; }
+.wrong { background: #ef4444; color: white; }
+
+/* ===== SCORE & LIVES ===== */
+#scoreLives {
+  font-size: 1.3rem;
+  margin-top: 20px;
+  background: #1e293b;
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px #00000077;
+}
+
+/* ===== RESPONSIVE ===== */
+@media screen and (max-width: 400px) {
+  .choices {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  #spinner, #timer, #suspense, #question {
+    width: 95%;
+  }
+}
 </style>
 </head>
 <body>
+
 <h1>🕹️ Byte by Byte</h1>
 <h2>IT Quiz Challenge</h2>
 
+<!-- CATEGORY SPINNER -->
 <div id="spinner">🎡 Press any button to spin</div>
+
+<!-- TIMERS -->
 <div id="timer"></div>
 <div id="suspense"></div>
-<div id="question"></div>
+
+<!-- QUESTION BOX -->
+<div id="question">Press a button to start!</div>
+
+<!-- CHOICES -->
 <div class="choices">
   <div id="A" class="choice">A</div>
   <div id="B" class="choice">B</div>
   <div id="C" class="choice">C</div>
   <div id="D" class="choice">D</div>
 </div>
+
+<!-- SCORE & LIVES -->
+<div id="scoreLives">⭐ Score: 0 | ❤️ Lives: 5</div>
 
 <script type="module" src="main.js"></script>
 </body>
