@@ -1,14 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// 🔥 YOUR FIREBASE WEB CONFIG
 const firebaseConfig = {
-  apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
+  apiKey: "PASTE_YOUR_API_KEY",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
   databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
   projectId: "byte-by-byte-f7a4c",
-  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
-  messagingSenderId: "838552047744",
-  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
+  storageBucket: "byte-by-byte-f7a4c.appspot.com",
+  messagingSenderId: "PASTE_YOUR_ID",
+  appId: "PASTE_YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -17,20 +18,31 @@ const db = getDatabase(app);
 const statusBox = document.getElementById("status");
 const controlRef = ref(db, "control");
 
+const choices = {
+  A: document.getElementById("A"),
+  B: document.getElementById("B"),
+  C: document.getElementById("C"),
+  D: document.getElementById("D")
+};
+
+function resetChoices() {
+  Object.values(choices).forEach(c => c.classList.remove("active"));
+}
+
 onValue(controlRef, snapshot => {
   const data = snapshot.val();
   if (!data || !data.button) return;
 
-  if (data.button === "A") {
-    statusBox.textContent = "✅ BUTTON A PRESSED";
-    statusBox.classList.add("active");
+  const btn = data.button;
+  console.log("Button received:", btn);
 
-    // reset so it can trigger again
-    set(controlRef, { button: "" });
+  resetChoices();
 
-    setTimeout(() => {
-      statusBox.textContent = "Waiting for ESP32 button…";
-      statusBox.classList.remove("active");
-    }, 1500);
+  if (choices[btn]) {
+    choices[btn].classList.add("active");
+    statusBox.textContent = `🎯 Selected Answer: ${btn}`;
   }
+
+  // reset Firebase so next press works
+  set(controlRef, { button: "" });
 });
