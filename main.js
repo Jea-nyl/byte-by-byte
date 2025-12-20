@@ -85,6 +85,7 @@ let spinning = true;
 let currentCategory = "";
 let currentQuestion = null;
 let canAnswer = false;
+let selectedAnswer = null;
 let answerTime = 10;
 let suspenseTime = 5;
 let answerInterval, suspenseInterval;
@@ -119,6 +120,7 @@ function loadQuestion() {
     choices[l].textContent = `${l}. ${currentQuestion.c[i]}`;
   });
 
+  selectedAnswer = null;
   startAnswerTimer();
 }
 
@@ -141,7 +143,7 @@ function startAnswerTimer(){
 
 /* ===== 5s SUSPENSE + RESULT ===== */
 function revealAnswer(selected){
-  resetChoices();
+  resetChoices(); 
   clearInterval(answerInterval);
 
   suspenseTime = 5;
@@ -171,7 +173,7 @@ function revealAnswer(selected){
 
       updateHUD();
 
-      // send result to ESP32
+      // Send result to ESP32
       set(controlRef, { result });
 
       setTimeout(()=>{
@@ -198,14 +200,12 @@ onValue(controlRef, snapshot=>{
   const btn = data.button;
   set(controlRef, { button: "" });
 
-  if(spinning){
-    spinCategory();
-    return;
+  if(spinning) spinCategory();
+  else if(canAnswer && !selectedAnswer){
+    selectedAnswer = btn;
+    choices[btn]?.classList.add("active");
+    canAnswer = false;
+    clearInterval(answerInterval);
+    revealAnswer(selectedAnswer);
   }
-
-  if(!canAnswer) return;
-
-  canAnswer = false;
-  choices[btn]?.classList.add("active");
-  revealAnswer(btn);
 });
