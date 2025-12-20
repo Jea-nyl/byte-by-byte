@@ -5,9 +5,11 @@
 <title>Byte by Byte: IT Quiz Challenge</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
+/* ===== GLOBAL STYLES ===== */
 body {
   font-family: 'Roboto', sans-serif;
   background: linear-gradient(to right, #0f172a, #1e293b);
@@ -17,31 +19,48 @@ body {
   padding: 20px;
   transition: background 0.5s;
 }
-h1 { font-size: 2.5rem; margin-bottom: 5px; color: #fcd34d; text-shadow: 1px 1px 3px #000000aa; }
-h2 { font-size: 1.5rem; margin-top: 0; color: #a5b4fc; text-shadow: 1px 1px 3px #000000aa; }
 
-canvas { margin: 15px auto; display: block; }
+h1 {
+  font-size: 2.8rem;
+  margin-bottom: 5px;
+  color: #fcd34d;
+  text-shadow: 2px 2px 5px #000000aa;
+}
 
-#spinner, #timer, #suspense, #question {
+h2 {
+  font-size: 1.6rem;
+  margin-top: 0;
+  color: #a5b4fc;
+  text-shadow: 1px 1px 3px #000000aa;
+}
+
+/* ===== SPINNER / TIMER / SUSPENSE ===== */
+#spinner, #timer, #suspense {
   margin: 15px auto;
+  font-size: 1.5rem;
   padding: 18px;
   width: 340px;
   max-width: 90%;
+  background: #334155;
   border-radius: 16px;
   box-shadow: 0 5px 15px #00000088;
   transition: background 0.3s, transform 0.3s;
 }
 
-#spinner { background: #334155; font-size: 1.4rem; }
-#timer, #suspense { background: #475569; font-size: 1.2rem; }
-
+/* ===== QUESTION BOX ===== */
 #question {
+  margin: 25px auto;
   font-size: 1.5rem;
-  background: #1e293b;
-  padding: 20px;
+  padding: 25px;
+  width: 90%;
   max-width: 600px;
+  background: #1e293b;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px #00000099;
+  transition: transform 0.3s;
 }
 
+/* ===== CHOICES ===== */
 .choices {
   display: grid;
   grid-template-columns: repeat(2, 160px);
@@ -51,38 +70,45 @@ canvas { margin: 15px auto; display: block; }
 }
 
 .choice {
-  padding: 20px;
+  padding: 22px;
   border-radius: 16px;
   background: #475569;
   font-size: 1.2rem;
   cursor: pointer;
-  transition: transform 0.2s, background 0.3s;
+  transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
   box-shadow: 0 5px 15px #00000077;
 }
 
-.choice:hover { transform: translateY(-5px); background: #6366f1; color: white; }
+.choice:hover {
+  transform: translateY(-5px);
+  background: #6366f1;
+  color: white;
+  box-shadow: 0 8px 20px #000000aa;
+}
 
 .active { background: #fde047; color: black; }
 .correct { background: #22c55e; color: white; }
 .wrong { background: #ef4444; color: white; }
 
+/* ===== SCORE & LIVES ===== */
 #scoreLives {
   font-size: 1.3rem;
-  margin-top: 20px;
+  margin-top: 25px;
   background: #1e293b;
   display: inline-block;
-  padding: 10px 20px;
+  padding: 12px 25px;
   border-radius: 16px;
   box-shadow: 0 4px 12px #00000077;
 }
 
-/* Flash animations */
+/* ===== FLASH ANIMATIONS ===== */
 .correct-flash { animation: flashGreen 0.5s ease-in-out 2; }
 .wrong-flash { animation: flashRed 0.5s ease-in-out 2; }
 
 @keyframes flashGreen { 0%,100%{background-color:#0f172a;}50%{background-color:#14532d;} }
 @keyframes flashRed { 0%,100%{background-color:#0f172a;}50%{background-color:#7f1d1d;} }
 
+/* ===== RESPONSIVE ===== */
 @media screen and (max-width: 400px) {
   .choices { grid-template-columns: 1fr; gap: 15px; }
   #spinner, #timer, #suspense, #question { width: 95%; }
@@ -94,14 +120,17 @@ canvas { margin: 15px auto; display: block; }
 <h1>🕹️ Byte by Byte</h1>
 <h2>IT Quiz Challenge</h2>
 
-<!-- Roulette Canvas -->
-<canvas id="roulette" width="300" height="300"></canvas>
+<!-- CATEGORY SPINNER -->
+<div id="spinner">🎡 Press A button to Start</div>
 
-<div id="spinner">🎡 Press A to spin</div>
+<!-- TIMERS -->
 <div id="timer"></div>
 <div id="suspense"></div>
-<div id="question">Press A to start!</div>
 
+<!-- QUESTION BOX -->
+<div id="question">Press A button to start the game!</div>
+
+<!-- CHOICES -->
 <div class="choices">
   <div id="A" class="choice">A</div>
   <div id="B" class="choice">B</div>
@@ -109,6 +138,10 @@ canvas { margin: 15px auto; display: block; }
   <div id="D" class="choice">D</div>
 </div>
 
+<!-- SCORE & LIVES -->
+<div id="scoreLives">⭐ Score: 0 | ❤️ Lives: 5</div>
+
+<!-- Main JS -->
 <script type="module" src="main.js"></script>
 </body>
 </html>
