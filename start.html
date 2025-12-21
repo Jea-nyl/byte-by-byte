@@ -14,10 +14,10 @@ body {
   transition: background 0.5s;
 }
 h1 { margin-bottom: 5px; color:#fde047; }
-#spinner, #timer, #suspense, #scoreLives, #questionCounter {
-  margin: 15px auto;
-  font-size: 1.5rem;
-  padding: 15px;
+#spinner, #timer, #suspense, #scoreLives, #questionCounter, #streak {
+  margin: 10px auto;
+  font-size: 1.4rem;
+  padding: 12px;
   width: 320px;
   background: #1e293b;
   border-radius: 12px;
@@ -37,23 +37,37 @@ h1 { margin-bottom: 5px; color:#fde047; }
   cursor: pointer;
   transition: background 0.5s;
 }
-.active { background: #fde047; color: black; }
 .correct { background: #22c55e; }
 .wrong { background: #ef4444; }
-.correct-flash { background-color: #14532d !important; transition: background 0.5s; }
-.wrong-flash { background-color: #7f1d1d !important; transition: background 0.5s; }
+.active { background: #fde047; color:black; }
+
+/* Streak color per level */
+#streak span {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+.streak-low { background:#3b82f6; }      /* 1-2 streak */
+.streak-medium { background:#facc15; }   /* 3-4 streak */
+.streak-high { background:#f97316; }     /* 5-7 streak */
+.streak-max { background:#ef4444; }      /* 8+ streak */
 </style>
 </head>
 <body>
+
 <h1>🕹️ Byte by Byte</h1>
 <h2>IT Quiz Challenge</h2>
 
-<div id="spinner">📂 Press any button to start</div>
+<div id="spinner">📂 Press A to start</div>
 <div id="questionCounter">❓ Question 0 / 0</div>
-<div id="timer"></div>
-<div id="suspense"></div>
+<div id="timer">⏱️ --s</div>
+<div id="suspense">⏳ --s</div>
+<div id="scoreLives">⭐ Score: 0 | ❤️ Lives: 3</div>
+<div id="streak">🔥 Streak: <span class="streak-low">0</span></div>
+
 <div id="question"></div>
-<div id="scoreLives"></div>
+
 <div class="choiceContainer">
   <div id="A" class="choice">A</div>
   <div id="B" class="choice">B</div>
@@ -62,5 +76,17 @@ h1 { margin-bottom: 5px; color:#fde047; }
 </div>
 
 <script type="module" src="main.js"></script>
+<script>
+/* Update streak display with color */
+export function updateStreakDisplay(streak){
+  const span = document.querySelector("#streak span");
+  span.textContent = streak;
+  span.className = ""; // reset
+  if(streak<=2) span.classList.add("streak-low");
+  else if(streak<=4) span.classList.add("streak-medium");
+  else if(streak<=7) span.classList.add("streak-high");
+  else span.classList.add("streak-max");
+}
+</script>
 </body>
 </html>
