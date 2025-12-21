@@ -5,48 +5,35 @@
 <title>Leaderboard - Byte by Byte</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{
-  font-family:Arial,sans-serif;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-  padding:20px;
+body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; padding:20px; }
+h1 { color:#fde047; }
+#scores { margin-top:20px; max-height:400px; overflow:hidden; }
+.scoreItem {
+  background:#1e293b; margin:10px auto; width:320px; padding:15px;
+  border-radius:12px; font-size:1.2rem; display:flex; justify-content:space-between; align-items:center;
 }
-h1{color:#fde047}
-.scoreItem{
-  background:#1e293b;
-  margin:10px auto;
-  width:320px;
-  padding:15px;
-  border-radius:12px;
-  display:flex;
-  gap:12px;
-  align-items:center;
-}
-.active{background:#fde047;color:black}
-.icon{font-size:1.5rem}
-small{opacity:0.7}
+.active { background:#fde047; color:black; }
+.icon { margin-right:10px; font-size:1.3rem; }
 </style>
 </head>
-
 <body>
-<h1>🏆 TOP 10 LEADERBOARD</h1>
+<h1>🏆 Leaderboard</h1>
 <div id="scores"></div>
-<p>A/B scroll · D return</p>
+<p>Use A/B to scroll, D to return to Menu</p>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔥 FIREBASE CONFIG */
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
   databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
   projectId: "byte-by-byte-f7a4c",
-  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  storageBucket: "byte-by-byte-f7a4c.appspot.com",
   messagingSenderId: "838552047744",
-  appId: "1:838552047744:web:f653b9fba96e49d665"
+  appId: "1:838552047744:web:f653b9fba96e49aa44d665"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -55,53 +42,44 @@ const leaderboardRef = ref(db,"leaderboard");
 const controlRef = ref(db,"control");
 
 const scoresDiv = document.getElementById("scores");
-let entries=[];
-let index=0;
-const medals=["🥇","🥈","🥉"];
+let entries = [];
+let currentIndex = 0;
+const visibleCount = 5;
+const medals = ["🥇","🥈","🥉"];
 
-function render(){
-  scoresDiv.innerHTML="";
-  if(entries.length===0) return;
-
-  const e = entries[index];
-  const medal = index<3 ? medals[index] : `#${index+1}`;
-  const date = new Date(e.timestamp).toLocaleString();
-
-  scoresDiv.innerHTML=`
-    <div class="scoreItem active">
-      <span class="icon">${medal}</span>
-      <div>
-        <div>⭐ Score: ${e.score}</div>
-        <div>🔥 Streak: ${e.streak}</div>
-        <small>${date}</small>
-      </div>
-    </div>
-  `;
+function renderScores(){
+  scoresDiv.innerHTML = "";
+  const start = Math.max(0,currentIndex);
+  const end = Math.min(entries.length,start+visibleCount);
+  for(let i=start;i<end;i++){
+    const div=document.createElement("div");
+    div.className="scoreItem";
+    if(i===currentIndex) div.classList.add("active");
+    const dateStr = new Date(entries[i].time).toLocaleString();
+    const icon = i<3?`<span class="icon">${medals[i]}</span>`:'';
+    div.innerHTML=`${icon}<span>Score: ${entries[i].score} | Streak: ${entries[i].streak} | ${dateStr}</span>`;
+    scoresDiv.appendChild(div);
+  }
 }
 
-onValue(leaderboardRef, snap=>{
+onValue(leaderboardRef, snapshot=>{
+  const data = snapshot.val()||{};
   entries=[];
-  snap.forEach(c=>{
-    entries.push(c.val());
-  });
-
-  entries.sort((a,b)=> b.score - a.score || a.timestamp - b.timestamp);
-  entries = entries.slice(0,10);
-  index=0;
-  render();
+  for(const id in data){
+    entries.push({id, ...data[id]});
+  }
+  entries.sort((a,b)=>b.score - a.score || b.time - a.time);
+  currentIndex=0;
+  renderScores();
 });
 
-/* 🔘 ESP32 CONTROL */
-onValue(controlRef,snap=>{
-  const btn=snap.val()?.button;
+onValue(controlRef,snapshot=>{
+  const btn = snapshot.val()?.button;
   if(!btn) return;
   set(controlRef,{button:""});
-
-  if(btn==="A") index=Math.max(0,index-1);
-  if(btn==="B") index=Math.min(entries.length-1,index+1);
-  if(btn==="D") window.location.href="index.html";
-
-  render();
+  if(btn==="A"){ currentIndex=Math.max(0,currentIndex-1); renderScores(); }
+  else if(btn==="B"){ currentIndex=Math.min(entries.length-1,currentIndex+1); renderScores(); }
+  else if(btn==="D"){ window.location.href="start.html"; }
 });
 </script>
 </body>
