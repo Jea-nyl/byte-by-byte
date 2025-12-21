@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, query, orderByChild, limitToLast, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* FIREBASE CONFIG */
+/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
@@ -12,16 +12,17 @@ const firebaseConfig = {
   appId: "1:838552047744:web:f653b9fba96e49aa44d665"
 };
 
-/* INITIALIZE FIREBASE */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const controlRef = ref(db,"control");
-const leaderboardRef = ref(db,"leaderboard");
+const controlRef = ref(db, "control");
+const leaderboardRef = ref(db, "leaderboard");
 
 /* ================= GAME STATE ================= */
-let gameState="menu", score=0, lives=5, streak=0;
-let questionPool=[], currentQuestion=null, canAnswer=false;
-let totalQuestions=0, questionNumber=0;
+let gameState = "menu", score = 0, lives = 3, streak = 0;
+let questionPool = [], currentQuestion = null, canAnswer = false;
+let totalQuestions = 0, questionNumber = 0;
+let answerTime = 10, revealTime = 5;
+let answerInterval = null, suspenseInterval = null;
 
 /* ================= QUESTION BANK ================= */
 const categories = {
@@ -72,47 +73,81 @@ function shuffle(array){
 
 /* ================= GAME LOGIC ================= */
 function startGame(){
-  score=0; lives=5; streak=0; gameState="playing";
-  questionPool=[];
+  score = 0; lives = 3; streak = 0; gameState = "playing";
+  questionPool = [];
   Object.values(categories).forEach(cat=>cat.forEach(q=>questionPool.push(q)));
   shuffle(questionPool);
   totalQuestions = questionPool.length;
-  questionNumber=0;
+  questionNumber = 0;
 
   document.getElementById("questionCounter").textContent=`❓ Question 0 / ${totalQuestions}`;
+  document.getElementById("scoreLives").textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
   nextQuestion();
 }
 
 function nextQuestion(){
-  if(questionPool.length===0){ congratulate(); return; }
-  currentQuestion=questionPool.pop();
+  if(questionPool.length === 0){ congratulate(); return; }
+  currentQuestion = questionPool.pop();
   questionNumber++;
-  canAnswer=true;
+  canAnswer = true;
 
-  document.getElementById("question").textContent=currentQuestion.q;
+  document.getElementById("question").textContent = currentQuestion.q;
   ["A","B","C","D"].forEach((l,i)=>{
-    document.getElementById(l).textContent=`${l}. ${currentQuestion.c[i]}`;
+    document.getElementById(l).textContent = `${l}. ${currentQuestion.c[i]}`;
   });
 
   document.getElementById("questionCounter").textContent=`❓ Question ${questionNumber} / ${totalQuestions}`;
+  startAnswerTimer();
 }
 
-function correctAnswer(){
-  streak++;
-  let bonus = streak>=8?10 : streak>=5?5 : streak>=3?2 : 0;
-  score += 5+bonus;
+function startAnswerTimer(){
+  clearInterval(answerInterval);
+  let t = answerTime;
+  document.getElementById("timer").textContent = `⏱️ ${t}s to answer`;
+  answerInterval = setInterval(()=>{
+    t--;
+    document.getElementById("timer").textContent = `⏱️ ${t}s to answer`;
+    if(t <= 0){
+      clearInterval(answerInterval);
+      canAnswer = false;
+      revealAnswer(null);
+    }
+  },1000);
 }
 
-function wrongAnswer(){
-  streak=0;
-  lives--;
-}
+function revealAnswer(selected){
+  clearInterval(answerInterval);
+  clearInterval(suspenseInterval);
 
-function submitAnswer(choice){
-  if(!canAnswer || gameState!=="playing") return;
-  canAnswer=false;
-  if(choice===currentQuestion.a) correctAnswer(); else wrongAnswer();
-  if(lives<=0) gameOver(); else setTimeout(nextQuestion, 1200);
+  let t = revealTime;
+  document.getElementById("suspense").textContent = `⏳ Revealing in ${t}s`;
+  suspenseInterval = setInterval(()=>{
+    t--;
+    document.getElementById("suspense").textContent = `⏳ Revealing in ${t}s`;
+    if(t <= 0){
+      clearInterval(suspenseInterval);
+      document.getElementById("suspense").textContent = "";
+
+      if(selected === currentQuestion.a){
+        streak++;
+        let bonus = streak>=8?10 : streak>=5?5 : streak>=3?2 : 0;
+        score += 5 + bonus;
+        document.getElementById(selected).classList.add("correct");
+      } else {
+        streak = 0;
+        lives--;
+        document.getElementById(currentQuestion.a).classList.add("correct");
+        if(selected) document.getElementById(selected).classList.add("wrong");
+      }
+
+      document.getElementById("scoreLives").textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+
+      setTimeout(()=>{
+        ["A","B","C","D"].forEach(l=>document.getElementById(l).className="choice");
+        if(lives <= 0){ gameOver(); } else { nextQuestion(); }
+      },1200);
+    }
+  },1000);
 }
 
 /* ================= GAME OVER ================= */
@@ -124,7 +159,6 @@ async function gameOver(){
 
   await push(leaderboardRef,{score, streak, time:Date.now()});
 
-  // Limit top 10
   const q = query(leaderboardRef, orderByChild("score"), limitToLast(11));
   const snap = await get(q);
   let list=[];
@@ -145,7 +179,6 @@ async function congratulate(){
 
   await push(leaderboardRef,{score, streak, time:Date.now()});
 
-  // Limit top 10
   const q = query(leaderboardRef, orderByChild("score"), limitToLast(11));
   const snap = await get(q);
   let list=[];
@@ -165,7 +198,7 @@ onValue(controlRef,snap=>{
   set(controlRef,{button:""});
 
   if(gameState==="menu" && btn==="A"){ startGame(); return; }
-  if(gameState==="playing"){ submitAnswer(btn); }
+  if(gameState==="playing"){ revealAnswer(btn); }
   if(gameState==="gameover" || gameState==="congrats"){
     if(btn==="A"){ startGame(); }
     if(btn==="B"){ location.href='leaderboard.html'; }
