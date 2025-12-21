@@ -5,35 +5,22 @@
 <title>Leaderboard - Byte by Byte</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-  padding:20px;
-}
-h1 { color:#fde047; margin-bottom:10px; }
-#scores {
-  margin-top:20px;
-  max-height:500px;
-  overflow-y:auto;
-}
+body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; padding:20px; }
+h1 { color:#fde047; }
+#scores { margin-top:20px; max-height:400px; overflow:hidden; }
 .scoreItem {
   background:#1e293b;
   margin:10px auto;
-  width:360px;
+  width:300px;
   padding:15px;
   border-radius:12px;
-  font-size:1.1rem;
-  transition: background 0.3s;
+  font-size:1.2rem;
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
 .active { background:#fde047; color:black; }
 .icon { margin-right:10px; font-size:1.3rem; }
-.itemDetail { display:flex; flex-direction:column; align-items:flex-start; text-align:left; }
-.itemDetail span { font-size:0.9rem; color:#cbd5e1; }
 </style>
 </head>
 <body>
@@ -43,9 +30,9 @@ h1 { color:#fde047; margin-bottom:10px; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* ================= FIREBASE CONFIG ================= */
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
@@ -58,16 +45,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const leaderboardRef = ref(db, "leaderboard");
-const controlRef = ref(db, "control");
+const leaderboardRef = ref(db,"leaderboard");
+const controlRef = ref(db,"control");
 
-/* ================= UI ================= */
 const scoresDiv = document.getElementById("scores");
-let entries = [], currentIndex = 0;
+let entries = [];
+let currentIndex = 0;
 const visibleCount = 5;
 const medals = ["🥇","🥈","🥉"];
 
-/* ================= RENDER ================= */
 function renderScores(){
   scoresDiv.innerHTML = "";
   const start = Math.max(0,currentIndex);
@@ -76,40 +62,29 @@ function renderScores(){
     const div = document.createElement("div");
     div.className="scoreItem";
     if(i===currentIndex) div.classList.add("active");
-
     const icon = i<3 ? `<span class="icon">${medals[i]}</span>` : '';
-    const time = new Date(entries[i].time).toLocaleString();
-    div.innerHTML = `${icon}<div class="itemDetail">
-      <strong>Score: ${entries[i].score}</strong>
-      <span>Streak: ${entries[i].streak}</span>
-      <span>${time}</span>
-    </div>`;
+    div.innerHTML=`${icon}<span>${entries[i].score} pts | Streak: ${entries[i].streak} | ${new Date(entries[i].time).toLocaleString()}</span>`;
     scoresDiv.appendChild(div);
   }
 }
 
-/* ================= LOAD DATA ================= */
 onValue(leaderboardRef, snapshot=>{
-  const data = snapshot.val() || {};
-  entries = [];
-  for(const id in data){
-    entries.push({...data[id], id});
-  }
-  entries.sort((a,b)=>b.score - a.score || b.streak - a.streak || a.time - b.time);
-  if(entries.length>10) entries = entries.slice(0,10);
-  currentIndex = 0;
+  const data = snapshot.val()||{};
+  entries = Object.keys(data).map(k=>({...data[k],id:k}));
+  entries.sort((a,b)=>b.score - a.score || b.time - a.time);
+  currentIndex=0;
   renderScores();
 });
 
-/* ================= BUTTON CONTROLS ================= */
+/* BUTTON CONTROLS */
 onValue(controlRef, snapshot=>{
   const btn = snapshot.val()?.button;
   if(!btn) return;
   set(controlRef,{button:""}); // reset
 
-  if(btn==="A"){ currentIndex=Math.max(0,currentIndex-1); renderScores(); }
-  else if(btn==="B"){ currentIndex=Math.min(entries.length-1,currentIndex+1); renderScores(); }
-  else if(btn==="D"){ window.location.href="start.html"; }
+  if(btn==="A"){ if(entries.length>0){ currentIndex=Math.max(0,currentIndex-1); renderScores(); } }
+  else if(btn==="B"){ if(entries.length>0){ currentIndex=Math.min(entries.length-1,currentIndex+1); renderScores(); } }
+  else if(btn==="D"){ window.location.href="index.html"; }
 });
 </script>
 </body>
