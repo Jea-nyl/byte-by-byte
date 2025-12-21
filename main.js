@@ -71,6 +71,16 @@ function shuffle(array){
   } 
 }
 
+function updateStreakDisplay(streak){
+  const span = document.querySelector("#streak span");
+  span.textContent = streak;
+  span.className = "";
+  if(streak <= 2) span.classList.add("streak-low");
+  else if(streak <= 4) span.classList.add("streak-medium");
+  else if(streak <= 7) span.classList.add("streak-high");
+  else span.classList.add("streak-max");
+}
+
 /* ================= GAME LOGIC ================= */
 function startGame(){
   score = 0; lives = 3; streak = 0; gameState = "playing";
@@ -82,6 +92,7 @@ function startGame(){
 
   document.getElementById("questionCounter").textContent=`❓ Question 0 / ${totalQuestions}`;
   document.getElementById("scoreLives").textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+  updateStreakDisplay(streak);
   nextQuestion();
 }
 
@@ -141,6 +152,7 @@ function revealAnswer(selected){
       }
 
       document.getElementById("scoreLives").textContent=`⭐ Score: ${score} | ❤️ Lives: ${lives}`;
+      updateStreakDisplay(streak);
 
       setTimeout(()=>{
         ["A","B","C","D"].forEach(l=>document.getElementById(l).className="choice");
@@ -154,7 +166,7 @@ function revealAnswer(selected){
 async function gameOver(){
   gameState="gameover";
   document.getElementById("spinner").textContent="💀 Game Over";
-  document.getElementById("question").textContent=`Score: ${score} | Streak: ${streak}`;
+  document.getElementById("question").textContent=`Score: ${score} | Max Streak: ${streak}`;
   document.getElementById("questionCounter").textContent="Press A to Restart | B for Menu";
 
   await push(leaderboardRef,{score, streak, time:Date.now()});
