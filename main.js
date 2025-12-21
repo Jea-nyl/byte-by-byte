@@ -18,7 +18,7 @@ const controlRef = ref(db, "control");
 const leaderboardRef = ref(db, "leaderboard");
 
 /* ================= GAME STATE ================= */
-let gameState = "menu", score = 0, lives = 3, streak = 0;
+let gameState = "menu", score = 0, lives = 3, streak = 0, maxStreak = 0;
 let questionPool = [], currentQuestion = null, canAnswer = false;
 let totalQuestions = 0, questionNumber = 0;
 let answerTime = 10, revealTime = 5;
@@ -83,7 +83,7 @@ function updateStreakDisplay(streak){
 
 /* ================= GAME LOGIC ================= */
 function startGame(){
-  score = 0; lives = 3; streak = 0; gameState = "playing";
+  score = 0; lives = 3; streak = 0; maxStreak = 0; gameState = "playing";
   questionPool = [];
   Object.values(categories).forEach(cat=>cat.forEach(q=>questionPool.push(q)));
   shuffle(questionPool);
@@ -141,6 +141,7 @@ function revealAnswer(selected){
 
       if(selected === currentQuestion.a){
         streak++;
+        if(streak > maxStreak) maxStreak = streak;
         let bonus = streak>=8?10 : streak>=5?5 : streak>=3?2 : 0;
         score += 5 + bonus;
         document.getElementById(selected).classList.add("correct");
@@ -166,31 +167,26 @@ function revealAnswer(selected){
 async function gameOver(){
   gameState="gameover";
   document.getElementById("spinner").textContent="💀 Game Over";
-  document.getElementById("question").textContent=`Score: ${score} | Max Streak: ${streak}`;
+  document.getElementById("question").textContent=`Score: ${score} | Max Streak: ${maxStreak}`;
   document.getElementById("questionCounter").textContent="Press A to Restart | B for Menu";
 
-  await push(leaderboardRef,{score, streak, time:Date.now()});
-
-  const q = query(leaderboardRef, orderByChild("score"), limitToLast(11));
-  const snap = await get(q);
-  let list=[];
-  snap.forEach(c=>list.push({id:c.key,...c.val()}));
-  list.sort((a,b)=>b.score - a.score);
-  while(list.length>10){
-    const removeItem = list.pop();
-    await remove(ref(db,"leaderboard/"+removeItem.id));
-  }
+  await push(leaderboardRef,{score,maxStreak,time:Date.now()});
+  limitLeaderboard();
 }
 
 /* ================= CONGRATULATIONS ================= */
 async function congratulate(){
   gameState="congrats";
   document.getElementById("spinner").textContent="🏆 Congratulations!";
-  document.getElementById("question").textContent=`You completed all questions!\nScore: ${score} | Max Streak: ${streak}`;
+  document.getElementById("question").textContent=`You completed all questions!\nScore: ${score} | Max Streak: ${maxStreak}`;
   document.getElementById("questionCounter").textContent="Press A to Restart | B for Menu";
 
-  await push(leaderboardRef,{score, streak, time:Date.now()});
+  await push(leaderboardRef,{score,maxStreak,time:Date.now()});
+  limitLeaderboard();
+}
 
+/* ================= LIMIT LEADERBOARD TO TOP 10 ================= */
+async function limitLeaderboard(){
   const q = query(leaderboardRef, orderByChild("score"), limitToLast(11));
   const snap = await get(q);
   let list=[];
@@ -213,6 +209,6 @@ onValue(controlRef,snap=>{
   if(gameState==="playing"){ revealAnswer(btn); }
   if(gameState==="gameover" || gameState==="congrats"){
     if(btn==="A"){ startGame(); }
-    if(btn==="B"){ location.href='leaderboard.html'; }
+    if(btn==="B"){ location.href='index.html'; }
   }
 });
