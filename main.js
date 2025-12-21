@@ -84,7 +84,7 @@ function startGame(){
 }
 
 function nextQuestion(){
-  if(questionPool.length===0){ gameOver(); return; }
+  if(questionPool.length===0){ congratulate(); return; }
   currentQuestion=questionPool.pop();
   questionNumber++;
   canAnswer=true;
@@ -115,13 +115,34 @@ function submitAnswer(choice){
   if(lives<=0) gameOver(); else setTimeout(nextQuestion, 1200);
 }
 
-/* ================= GAME OVER + LEADERBOARD ================= */
+/* ================= GAME OVER ================= */
 async function gameOver(){
   gameState="gameover";
   document.getElementById("spinner").textContent="💀 Game Over";
   document.getElementById("question").textContent=`Score: ${score} | Streak: ${streak}`;
-  document.getElementById("questionCounter").textContent="";
-  
+  document.getElementById("questionCounter").textContent="Press A to Restart | B for Menu";
+
+  await push(leaderboardRef,{score, streak, time:Date.now()});
+
+  // Limit top 10
+  const q = query(leaderboardRef, orderByChild("score"), limitToLast(11));
+  const snap = await get(q);
+  let list=[];
+  snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.sort((a,b)=>b.score - a.score);
+  while(list.length>10){
+    const removeItem = list.pop();
+    await remove(ref(db,"leaderboard/"+removeItem.id));
+  }
+}
+
+/* ================= CONGRATULATIONS ================= */
+async function congratulate(){
+  gameState="congrats";
+  document.getElementById("spinner").textContent="🏆 Congratulations!";
+  document.getElementById("question").textContent=`You completed all questions!\nScore: ${score} | Max Streak: ${streak}`;
+  document.getElementById("questionCounter").textContent="Press A to Restart | B for Menu";
+
   await push(leaderboardRef,{score, streak, time:Date.now()});
 
   // Limit top 10
@@ -145,4 +166,8 @@ onValue(controlRef,snap=>{
 
   if(gameState==="menu" && btn==="A"){ startGame(); return; }
   if(gameState==="playing"){ submitAnswer(btn); }
+  if(gameState==="gameover" || gameState==="congrats"){
+    if(btn==="A"){ startGame(); }
+    if(btn==="B"){ location.href='leaderboard.html'; }
+  }
 });
