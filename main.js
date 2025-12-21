@@ -1,225 +1,128 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  onValue,
-  set,
-  push,
-  query,
-  orderByChild,
-  limitToLast,
-  get,
-  remove
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, push, query, orderByChild, limitToLast, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔥 FIREBASE CONFIG */
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBkFUpf2JuYIch95wx9B4Rk-jp9I7IudJs",
   authDomain: "byte-by-byte-f7a4c.firebaseapp.com",
   databaseURL: "https://byte-by-byte-f7a4c-default-rtdb.firebaseio.com",
   projectId: "byte-by-byte-f7a4c",
-  storageBucket: "byte-by-byte-f7a4c.firebasestorage.app",
+  storageBucket: "byte-by-byte-f7a4c.appspot.com",
   messagingSenderId: "838552047744",
   appId: "1:838552047744:web:f653b9fba96e49aa44d665"
 };
 
-/* 🔌 INIT */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const controlRef = ref(db, "control");
-const leaderboardRef = ref(db, "leaderboard");
+const controlRef = ref(db,"control");
+const leaderboardRef = ref(db,"leaderboard");
 
-/* 🎮 UI */
-const spinner = document.getElementById("spinner");
-const timerBox = document.getElementById("timer");
-const suspenseBox = document.getElementById("suspense");
-const questionBox = document.getElementById("question");
-const scoreLivesBox = document.getElementById("scoreLives");
+/* ============================== GAME STATE ============================== */
+let gameState="menu", score=0, lives=5, streak=0;
+let questionPool=[], currentQuestion=null, canAnswer=false;
+let totalQuestions=0, questionNumber=0;
 
-const choices = {
-  A: document.getElementById("A"),
-  B: document.getElementById("B"),
-  C: document.getElementById("C"),
-  D: document.getElementById("D")
-};
-
-/* 📚 QUESTION BANK (YOUR CATEGORIES) */
+/* ============================== QUESTION BANK ============================== */
 const categories = {
   DATABASE: [
-    {q:"What is SQL used for?", c:["Styling websites","Querying databases","Managing network devices","Writing operating systems"], a:"B"},
-    {q:"What is a primary key?", c:["Unique identifier for a record","A type of index","A table name","Column description"], a:"A"},
-    {q:"Which type of database is relational?", c:["MongoDB","MySQL","Redis","Cassandra"], a:"B"},
-    {q:"What does ACID in databases stand for?", c:["Access, Control, Integrity, Data","Atomicity, Consistency, Isolation, Durability","Application, Connection, Index, Data","Architecture, Code, Interface, Design"], a:"B"},
-    {q:"What is normalization in databases?", c:["Improving performance of CPU","Structuring data to reduce redundancy","Installing database software","Encrypting database"], a:"B"}
+    {q:"What is SQL used for?",c:["Styling websites","Querying databases","Managing networks","Writing OS"],a:"B"},
+    {q:"Primary key is?",c:["Unique identifier","Index","Table name","Column label"],a:"A"},
+    {q:"Which is a relational DB?",c:["MongoDB","MySQL","Redis","Firebase"],a:"B"},
+    {q:"ACID stands for?",c:["Atomicity Consistency Isolation Durability","Access Control Index Data","App Code Interface Design","None"],a:"A"},
+    {q:"Normalization means?",c:["Encrypting data","Reducing redundancy","Backing up DB","Improving UI"],a:"B"}
   ],
-
   NETWORKING: [
-    {q:"What device connects multiple networks together?", c:["Router","Switch","Hub","Modem"], a:"A"},
-    {q:"What does IP stand for?", c:["Internet Protocol","Internal Process","Information Packet","Integrated Platform"], a:"A"},
-    {q:"What is the main purpose of DNS?", c:["Store passwords","Translate domain names to IP addresses","Protect against malware","Route email"], a:"B"},
-    {q:"Which protocol is used for sending emails?", c:["HTTP","SMTP","FTP","SNMP"], a:"B"},
-    {q:"What does LAN stand for?", c:["Large Area Network","Local Area Network","Local Application Node","Linked Access Network"], a:"B"}
+    {q:"Device that connects networks?",c:["Router","Switch","Hub","Repeater"],a:"A"},
+    {q:"IP stands for?",c:["Internet Protocol","Internal Program","Interface Process","Internet Page"],a:"A"},
+    {q:"Protocol for email?",c:["HTTP","SMTP","FTP","SNMP"],a:"B"},
+    {q:"LAN means?",c:["Large Area Network","Local Area Network","Logical Access Node","Low Area Network"],a:"B"},
+    {q:"DNS does what?",c:["Encrypt data","Name to IP","Speed network","Block sites"],a:"B"}
   ],
-
   PEOPLE: [
-    {q:"Who is responsible for managing an organization’s IT infrastructure?", c:["Database Administrator","Network Engineer","IT Manager","Software Developer"], a:"C"},
-    {q:"Who writes and maintains computer programs?", c:["System Analyst","Software Developer","Network Admin","Security Analyst"], a:"B"},
-    {q:"Who ensures security policies are followed and risks are minimized?", c:["Database Admin","Security Analyst","Project Manager","UX Designer"], a:"B"},
-    {q:"Who plans IT projects and ensures deadlines are met?", c:["IT Manager","Project Manager","Help Desk Technician","Systems Architect"], a:"B"},
-    {q:"Who interacts with end users to improve system usability?", c:["UX/UI Designer","Network Engineer","IT Support","QA Tester"], a:"A"}
+    {q:"Who manages IT infrastructure?",c:["Programmer","IT Manager","Web Designer","Tester"],a:"B"},
+    {q:"Who writes code?",c:["Network Admin","Developer","IT Manager","Analyst"],a:"B"},
+    {q:"Who handles security risks?",c:["DBA","Security Analyst","Designer","Clerk"],a:"B"},
+    {q:"Who plans projects?",c:["IT Support","Project Manager","Technician","Developer"],a:"B"},
+    {q:"Who designs usability?",c:["UX Designer","DBA","Network Engineer","Tester"],a:"A"}
   ],
-
   HARDWARE: [
-    {q:"What does CPU stand for?", c:["Central Processing Unit","Computer Peripheral Unit","Central Programming Utility","Control Processing Unit"], a:"A"},
-    {q:"What is RAM used for?", c:["Permanent storage","Temporary memory while programs run","Network connectivity","Graphics rendering"], a:"B"},
-    {q:"Which device outputs visuals to the user?", c:["CPU","GPU","RAM","SSD"], a:"B"},
-    {q:"What type of storage is non-volatile?", c:["RAM","Cache","SSD","Register"], a:"C"},
-    {q:"Which component powers the computer?", c:["Motherboard","PSU (Power Supply Unit)","CPU","GPU"], a:"B"}
+    {q:"CPU stands for?",c:["Central Processing Unit","Computer Power Unit","Control Program Utility","Core Processing User"],a:"A"},
+    {q:"RAM is used for?",c:["Permanent storage","Temporary memory","Backup","Networking"],a:"B"},
+    {q:"Non-volatile storage?",c:["RAM","Cache","SSD","Register"],a:"C"},
+    {q:"Outputs display?",c:["CPU","GPU","PSU","RAM"],a:"B"},
+    {q:"Powers computer?",c:["Motherboard","PSU","CPU","SSD"],a:"B"}
   ],
-
   SOFTWARE: [
-    {q:"Which is an operating system?", c:["Windows 10","Microsoft Word","Chrome","Photoshop"], a:"A"},
-    {q:"What type of software is Microsoft Excel?", c:["System software","Application software","Utility software","Firmware"], a:"B"},
-    {q:"What is open-source software?", c:["Software you cannot access","Software with source code publicly available","Only for enterprises","Free of charge but closed source"], a:"B"},
-    {q:"What is an IDE used for?", c:["Network monitoring","Writing and debugging code","Database backup","Managing hardware"], a:"B"},
-    {q:"What is a patch in software?", c:["A bug in code","Update to fix issues or vulnerabilities","A programming language","A type of OS"], a:"B"}
+    {q:"Which is an OS?",c:["Windows","Word","Chrome","Photoshop"],a:"A"},
+    {q:"Excel is?",c:["System software","Application software","Firmware","Utility"],a:"B"},
+    {q:"Open source means?",c:["Paid","Public source code","Closed","Trial"],a:"B"},
+    {q:"IDE used for?",c:["Monitoring","Coding","Backup","Networking"],a:"B"},
+    {q:"Patch means?",c:["Bug","Update fix","Virus","Language"],a:"B"}
   ]
 };
 
-/* 🎯 GAME STATE */
-let gameState="menu";
-let usedQuestions=[];
-let currentQuestion=null;
-let canAnswer=false;
-let score=0;
-let lives=5;
-let streak=0;
-let answerInterval,suspenseInterval;
+/* ============================== HELPERS ============================== */
+function shuffle(array){ for(let i=array.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]]; } }
 
-/* 🧠 HELPERS */
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-  return arr;
+/* ============================== GAME LOGIC ============================== */
+function startGame(){
+  score=0; lives=5; streak=0; gameState="playing";
+  questionPool=[];
+  Object.values(categories).forEach(cat=>cat.forEach(q=>questionPool.push(q)));
+  shuffle(questionPool);
+  totalQuestions = questionPool.length;
+  questionNumber=0;
+  nextQuestion();
 }
 
-function getNextQuestion(){
-  const all=[];
-  Object.values(categories).forEach(cat=>cat.forEach(q=>all.push(q)));
-  const remaining=all.filter(q=>!usedQuestions.includes(q));
-  if(remaining.length===0) return null;
-  const q=remaining[Math.floor(Math.random()*remaining.length)];
-  usedQuestions.push(q);
-  return q;
-}
-
-/* ❓ LOAD QUESTION */
-function loadQuestion(){
-  currentQuestion=getNextQuestion();
-  if(!currentQuestion){ gameOver(); return; }
-
-  spinner.textContent="📂 Random Category";
-  questionBox.textContent=currentQuestion.q;
-
-  ["A","B","C","D"].forEach((l,i)=>{
-    choices[l].textContent=`${l}. ${currentQuestion.c[i]}`;
-    choices[l].dataset.answer=l;
-    choices[l].className="choice";
-  });
-
-  startTimer();
-}
-
-/* ⏱ TIMER */
-function startTimer(){
+function nextQuestion(){
+  if(questionPool.length===0){ gameOver(); return; }
+  currentQuestion=questionPool.pop();
+  questionNumber++;
   canAnswer=true;
-  let t=10;
-  timerBox.textContent=`⏱️ ${t}s`;
 
-  answerInterval=setInterval(()=>{
-    t--;
-    timerBox.textContent=`⏱️ ${t}s`;
-    if(t<=0){
-      clearInterval(answerInterval);
-      canAnswer=false;
-      reveal(null);
-    }
-  },1000);
+  document.getElementById("question").textContent=currentQuestion.q;
+  ["A","B","C","D"].forEach((l,i)=>{
+    document.getElementById(l).textContent=`${l}. ${currentQuestion.c[i]}`;
+  });
+  document.getElementById("questionCounter").textContent=`❓ Question ${questionNumber} / ${totalQuestions}`;
 }
 
-/* ✅ CHECK ANSWER */
-function reveal(selected){
-  clearInterval(answerInterval);
-  let s=3;
-  suspenseBox.textContent=`⏳ ${s}`;
-
-  suspenseInterval=setInterval(()=>{
-    s--;
-    suspenseBox.textContent=`⏳ ${s}`;
-    if(s<=0){
-      clearInterval(suspenseInterval);
-      suspenseBox.textContent="";
-
-      if(selected && selected===currentQuestion.a){
-        score+=5;
-        streak++;
-        choices[selected].classList.add("correct");
-      }else{
-        lives--;
-        streak=0;
-        choices[currentQuestion.a].classList.add("correct");
-      }
-
-      scoreLivesBox.textContent=`⭐ ${score} | ❤️ ${lives} | 🔥 ${streak}`;
-
-      if(lives<=0) gameOver();
-      else setTimeout(loadQuestion,1200);
-    }
-  },1000);
+function correctAnswer(){
+  streak++;
+  let bonus = streak>=8?10 : streak>=5?5 : streak>=3?2 : 0;
+  score += 5+bonus;
 }
 
-/* 💀 GAME OVER + SAVE TOP 10 */
+function wrongAnswer(){ streak=0; lives--; }
+
+function submitAnswer(choice){
+  if(!canAnswer || gameState!=="playing") return;
+  canAnswer=false;
+  if(choice===currentQuestion.a) correctAnswer(); else wrongAnswer();
+  if(lives<=0) gameOver(); else setTimeout(nextQuestion, 1200);
+}
+
+/* ============================== GAME OVER + LEADERBOARD ============================== */
 async function gameOver(){
   gameState="gameover";
-  spinner.textContent="💀 GAME OVER";
-  questionBox.textContent=`Final Score: ${score}`;
 
-  await push(leaderboardRef,{
-    score, streak, timestamp:Date.now()
-  });
+  await push(leaderboardRef,{score, streak, time:Date.now()});
 
-  const q=query(leaderboardRef,orderByChild("score"),limitToLast(11));
-  const snap=await get(q);
-  if(snap.exists()){
-    const list=[];
-    snap.forEach(c=>list.push({id:c.key,...c.val()}));
-    list.sort((a,b)=>b.score-a.score||a.timestamp-b.timestamp);
-    while(list.length>10){
-      const r=list.pop();
-      await remove(ref(db,"leaderboard/"+r.id));
-    }
-  }
+  const q = query(leaderboardRef, orderByChild("score"), limitToLast(11));
+  const snap = await get(q);
+  let list=[];
+  snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.sort((a,b)=>b.score-b.score);
+  while(list.length>10){ const removeItem=list.pop(); await remove(ref(db,"leaderboard/"+removeItem.id)); }
 }
 
-/* 🔘 ESP32 INPUT */
+/* ============================== ESP32 BUTTON INPUT ============================== */
 onValue(controlRef,snap=>{
-  const btn=snap.val()?.button;
-  if(!btn) return;
+  const data=snap.val();
+  if(!data || !data.button) return;
+  const btn=data.button;
   set(controlRef,{button:""});
-
-  if(gameState==="menu"){
-    gameState="playing";
-    usedQuestions=[];
-    score=0; lives=5; streak=0;
-    scoreLivesBox.textContent="⭐ 0 | ❤️ 5 | 🔥 0";
-    loadQuestion();
-    return;
-  }
-
-  if(gameState==="playing" && canAnswer){
-    canAnswer=false;
-    reveal(btn);
-  }
+  if(gameState==="menu" && btn==="A"){ startGame(); return; }
+  if(gameState==="playing"){ submitAnswer(btn); }
 });
